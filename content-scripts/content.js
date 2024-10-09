@@ -52,7 +52,6 @@ async function searchArrayAndOutput() {
         }
         
         document.getElementById(id_name + '.page').value = result ? result[5] : '';
-        document.getElementById(id_name + '.effect').value = result ? result[6] : '';
 
       }
 
