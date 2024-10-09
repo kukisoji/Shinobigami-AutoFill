@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "半自動忍法概要埋め立て機",
+  "description": "シノビガミのキャラシートを作成する際に、忍法欄の忍法効果以外を埋めます。",
+  "version": "1.1.1",
+  "icons": {
+    "16": "icon/16.png",
+    "32": "icon/32.png",
+    "48": "icon/48.png",
+    "96": "icon/96.png",
+    "128": "icon/128.png"
+  },
+  "commands": {
+    "wxt:reload-extension": {
+      "description": "Reload the extension during development",
+      "suggested_key": {
+        "default": "Alt+R"
+      }
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Default Popup Title",
+    "default_popup": "popup/popup.html"
+  },
+  "host_permissions": [
+    "https://character-sheets.appspot.com/shinobigami/edit.html*"
+  ],
+  "permissions": [
+    "scripting",
+    "activeTab"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://character-sheets.appspot.com/shinobigami/edit.html*"],
+      "js": ["content-scripts/content.js"]
+    }
+  ],
+  "web_accessible_resources": [{
+    "resources": ["array_data.json"],
+    "matches": ["<all_urls>"]
+  }]
+}
