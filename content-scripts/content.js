@@ -140,7 +140,7 @@ async function GabaCheckStart() {
 
     if (result) {
 
-      if (result && result !== undefined) {
+      if (result[5] && result[5] !== undefined) {
         triggerStyleChange(result[5]);
       }
 
