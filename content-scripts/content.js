@@ -31,7 +31,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   } else if (request.action === 'GabaCheckStart') {
     console.log("ガﾞバﾞいﾞ子ﾞはﾞいﾞねﾞぇﾞかﾞぁﾞ！");
     debouncedGabaCheckStart();
-  };
+  }
 });
 async function searchArrayAndOutput() {
   let arrayData = null;
@@ -46,7 +46,6 @@ async function searchArrayAndOutput() {
   let id_name = 'ninpou.' + String(i);
   let outputElement;
   let ColumnValue;
-  let EffectAruka;
   const batten_yurusumazi = /(☓|☒|✗|✘|×|✕|❌️|✖|❎️|X|x)天/;
 
   while (document.getElementById(id_name)) {
