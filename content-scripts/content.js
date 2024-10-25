@@ -48,29 +48,35 @@ async function searchArrayAndOutput() {
     /L|　|\s|→|\＜|\＞|\(|\/|\)|離し|かわし|殺し|崩し|宿し|晴らし|必要生命|二度限定|使用許諾|回避反動|不安要素|必要物資|双子/g;
   const batten_yurusumazi = /(☓|☒|✗|✘|×|✕|❌️|✖|❎️|X|x)天/;
 
+  //忍法の数だけぐーるぐる
   while (document.getElementById(id_name)) {
     const targetElement = document.getElementById(id_name + ".name");
     if (targetElement) {
       let info = targetElement.value || targetElement.textContent;
+
+      //忍法名から不要な文言を削除
       info = info.replace(regexToRemove, "");
+
+      //✕天を確実に適した形にする。許さねぇ✕天
       if (batten_yurusumazi.test(info)) {
         info = "✕天";
       }
+
+      //忍法の検索
       const result = arrayData.find((row) => row[0] == info);
 
       outputElement = document.getElementById(id_name + ".type");
 
+      //忍法が見つかったら処理開始。見つからなかったら無視します。
       if (outputElement && result != undefined) {
         ColumnValue = result ? result[1] : "";
         outputElement.value = ColumnValue;
 
+        //忍法のタイプに合わせて処理を変更
         if (ColumnValue == "装備") {
           document.getElementById(id_name + ".range").value = "なし";
           document.getElementById(id_name + ".cost").value = "なし";
           document.getElementById(id_name + ".targetSkill").value = "なし";
-          document.getElementById(id_name + ".page").value = result
-            ? result[5]
-            : "";
         } else if (ColumnValue == "攻撃" || ColumnValue == "サポート") {
           document.getElementById(id_name + ".range").value = result
             ? result[2]
@@ -81,14 +87,17 @@ async function searchArrayAndOutput() {
           document.getElementById(id_name + ".targetSkill").value = result
             ? result[4]
             : "";
-          document.getElementById(id_name + ".page").value = result
-            ? result[5]
-            : "";
         }
+
+        document.getElementById(id_name + ".page").value = result
+          ? result[5]
+          : "";
 
         let effectElement = document.getElementById(id_name + ".effect");
 
+        //忍法効果記入ゾーン
         if (effectElement && effectElement.value !== "") {
+          //忍法効果が既に記入されていたら、そのデータをローカルに保存
           chrome.storage.local.set(
             { [info]: effectElement.value },
             function () {
@@ -101,6 +110,7 @@ async function searchArrayAndOutput() {
             }
           );
         } else {
+          //忍法効果が未記載の場合、保存データを確認して取ってくる
           chrome.storage.local.get(info, function (getNinpo) {
             const savedValue = getNinpo[info];
             if (savedValue) {
@@ -119,6 +129,7 @@ async function searchArrayAndOutput() {
       } else {
         console.error("Output element not found");
       }
+
       i++;
       id_name = "ninpou." + ("000" + i).slice(-3);
     } else {
@@ -126,6 +137,7 @@ async function searchArrayAndOutput() {
     }
   }
 
+  //変更イベント着火(これを入れないと表面上変更されていないように見えちゃう)
   const event = new Event("input", { bubbles: true, cancelable: true });
   outputElement.dispatchEvent(event);
   const changeEvent = new Event("change", { bubbles: true, cancelable: true });
@@ -142,6 +154,7 @@ async function GabaCheckStart() {
     return;
   }
 
+  //タイプが忍者ならチェック開始
   if (document.getElementById("base.race").value == "1") {
     let i = 0;
     let id_name = "ninpou." + String(i);
@@ -154,15 +167,26 @@ async function GabaCheckStart() {
     let ZyoiRyuha;
     let KaiRyuha = document.getElementById("base.substyle").value;
 
+    //流派指定部分を埋めたりちょっと変えたり
     if (!KaiRyuha.trim()) {
       KaiRyuha = "上位流派";
     } else if (KaiRyuha === "特教委") {
       KaiRyuha = "特命臨時教職員派遣委員会";
     }
 
+    //もうここで特技の一覧取っちゃうぜ
+    let selectedTokugi = document.querySelectorAll(
+      `.input.skillcol.selected.selected > [id^="skills.row"][id*=".name"]`
+    );
+    const textContents = Array.from(selectedTokugi).map(
+      (selectedTokugi) => selectedTokugi.textContent
+    );
+
+    //流派名で配列検索
     const result = arrayData.find((row) => row[0] === KaiRyuha);
 
     if (result) {
+      //流派に合わせて上位流派を変更
       if (result[5] && result[5] !== undefined) {
         triggerStyleChange(result[5]);
       }
@@ -195,23 +219,28 @@ async function GabaCheckStart() {
             ErrMsg + "上位流派が記入されていない、もしくは異常な値です。\n";
       }
 
+      //上位流派が正しく記入されている場合のみ続行
       if (RyuhaFlag != 9) {
         selectedCount = document.querySelectorAll(
           `.input.skillcol.selected.selected > [id^="skills.row"][id$=".name${RyuhaFlag}"]`
         ).length;
 
+        //所属条件の判定
         if (result[1] == 0) {
+          //上位流派の場合
           if (selectedCount < 3) {
             GabaFlag = true;
             ErrMsg = ErrMsg + "得意分野の特技数が3つ以下です。\n";
           }
         } else {
+          //下位流派
           if (selectedCount < 2) {
             GabaFlag = true;
             ErrMsg = ErrMsg + "得意分野の特技数が2つ以下です。\n";
           }
           switch (result[1]) {
             case 2:
+              //所属条件が忍法の場合
               let NinpoElement = document.querySelectorAll(
                 `[id^="ninpou."][id*=".name"]`
               );
@@ -231,12 +260,7 @@ async function GabaCheckStart() {
               }
               break;
             case 3:
-              let selectedTokugi = document.querySelectorAll(
-                `.input.skillcol.selected.selected > [id^="skills.row"][id*=".name"]`
-              );
-              const textContents = Array.from(selectedTokugi).map(
-                (selectedTokugi) => selectedTokugi.textContent
-              );
+              //所属条件が特技の場合
               const JokenTokugi = result.slice(2, 5);
               const filteredArray = JokenTokugi.filter(Boolean);
               const hasMatch = textContents.some((element) =>
@@ -260,6 +284,7 @@ async function GabaCheckStart() {
               }
               break;
             case 4:
+              //所属条件が特技分野の場合
               if (
                 document.querySelectorAll(
                   `.input.skillcol.selected.selected > [id^="skills.row"][id$=".name${result[2]}"]`
@@ -307,6 +332,7 @@ async function GabaCheckStart() {
               }
               break;
             case 5:
+              //醜女衆および義経流
               if (KaiRyuha == "醜女衆") {
                 if (
                   document.getElementById("base.sex").value.indexOf("女") == -1
@@ -334,21 +360,37 @@ async function GabaCheckStart() {
           }
         }
       }
+
+      //奥義チェック
       while (document.getElementById(sp_name)) {
         // .skill 要素の確認
         const skillElement = document.getElementById(sp_name + ".skill");
+
         if (skillElement) {
           const skillValue = skillElement.value;
+          const ogiMatch = textContents.some((element) =>
+            skillValue.includes(element)
+          );
+
           if (skillValue === "") {
             GabaFlag = true;
-            ErrMsg += "奥義の指定特技がありません。\n";
+            ErrMsg += "奥義の指定特技が記入されていません。\n";
+          } else if (!ogiMatch) {
+            GabaFlag = true;
+            ErrMsg +=
+              "奥義の指定特技として指定されている" +
+              skillValue +
+              "を修得していません。\n";
           }
         }
+
         console.log("奥義チェックヨシ！：", sp_name);
         s++;
         sp_name = "secret.specialEffect." + ("000" + s).slice(-3);
       }
       console.log("奥義チェック終わり！");
+
+      //忍法の特技チェック
       while (document.getElementById(id_name)) {
         // .targetSkill 要素の確認
         const targetSkillElement = document.getElementById(
@@ -368,6 +410,8 @@ async function GabaCheckStart() {
         id_name = "ninpou." + ("000" + i).slice(-3);
       }
       console.log("忍法チェック終わり！");
+
+      //結果発表～！
       if (GabaFlag) {
         alert(ErrMsg);
       } else {
