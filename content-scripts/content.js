@@ -46,7 +46,7 @@ async function searchArrayAndOutput() {
   let id_name = 'ninpou.' + String(i);
   let outputElement;
   let ColumnValue;
-  const regexToRemove = /L|　L|　　L|\(|\/|\)|離し|かわし|殺し|崩し|宿し|晴らし|必要生命|二度限定|使用許諾|回避反動|不安要素|必要物資/g;
+  const regexToRemove = /L|　|\s|\＜|\＞|\(|\/|\)|離し|かわし|殺し|崩し|宿し|晴らし|必要生命|二度限定|使用許諾|回避反動|不安要素|必要物資/g;
   const batten_yurusumazi = /(☓|☒|✗|✘|×|✕|❌️|✖|❎️|X|x)天/;
 
   while (document.getElementById(id_name)) {
