@@ -31,9 +31,8 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   } else if (request.action === 'GabaCheckStart') {
     console.log("ガﾞバﾞいﾞ子ﾞはﾞいﾞねﾞぇﾞかﾞぁﾞ！");
     debouncedGabaCheckStart();
-  }
+  };
 });
-
 async function searchArrayAndOutput() {
   let arrayData = null;
   try {
@@ -47,6 +46,7 @@ async function searchArrayAndOutput() {
   let id_name = 'ninpou.' + String(i);
   let outputElement;
   let ColumnValue;
+  let EffectAruka;
   const batten_yurusumazi = /(☓|☒|✗|✘|×|✕|❌️|✖|❎️|X|x)天/;
 
   while (document.getElementById(id_name)) {
@@ -69,21 +69,23 @@ async function searchArrayAndOutput() {
           document.getElementById(id_name + '.range').value = "なし";
           document.getElementById(id_name + '.cost').value = "なし";
           document.getElementById(id_name + '.targetSkill').value = "なし";
-        } else {
+          document.getElementById(id_name + '.page').value = result ? result[5] : '';
+
+        } else if (ColumnValue == "攻撃" || ColumnValue == "サポート") {
           document.getElementById(id_name + '.range').value = result ? result[2] : '';
           document.getElementById(id_name + '.cost').value = result ? result[3] : '';
           document.getElementById(id_name + '.targetSkill').value = result ? result[4] : '';
+          document.getElementById(id_name + '.page').value = result ? result[5] : '';
+
         }
+	
+       let effectElement = document.getElementById(id_name + '.effect');
 
-        document.getElementById(id_name + '.page').value = result ? result[5] : '';
-
-        let effectElement = document.getElementById(id_name + '.effect');
-
-        if (effectElement && effectElement.value !== "") {
+	if (effectElement && effectElement.value !== "") {
           chrome.storage.local.set({ [info]: effectElement.value }, function() {
             console.log('値が保存されました：', info, ':', effectElement.value);
-          });
-        } else {
+	  });
+	} else {
           chrome.storage.local.get(info, function(getNinpo) {
             const savedValue = getNinpo[info];
             if (savedValue) {
@@ -123,6 +125,8 @@ async function GabaCheckStart() {
 
     let i = 0;
     let id_name = 'ninpou.' + String(i);
+    let s = 0;
+    let sp_name = 'secret.specialEffect.' + String(s);
     let GabaFlag = false;
     let ErrMsg = "以下の箇所でガバが発見されました。\n";
     let selectedCount;
@@ -260,6 +264,36 @@ async function GabaCheckStart() {
           }
         }
       }
+      while (document.getElementById(sp_name)) {
+	// .skill 要素の確認
+	const skillElement = document.getElementById(sp_name + '.skill');
+	if (skillElement) {
+	  const skillValue = skillElement.value;
+	  if (skillValue === "") {
+	    GabaFlag = true;
+	    ErrMsg += "奥義の指定特技がありません。\n";
+          }
+	}
+　　　　console.log('奥義チェックヨシ！：',sp_name,);
+        s++;
+        sp_name = 'secret.specialEffect.' + ('000' + s).slice(-3);
+      }
+　　　console.log('奥義チェック終わり！');
+      while (document.getElementById(id_name)) {
+	// .targetSkill 要素の確認
+	const targetSkillElement = document.getElementById(id_name + '.targetSkill');
+	if (targetSkillElement) {
+	  const targetSkillValue = targetSkillElement.value;
+	  if (targetSkillValue === "" || targetSkillValue === "自由") {
+	  GabaFlag = true;
+	  ErrMsg += "指定特技がありません。\n";
+	  }
+	}
+        console.log('忍法チェックヨシ！：',id_name,);
+        i++;
+        id_name = 'ninpou.' + ('000' + i).slice(-3);
+      }
+　　　console.log('忍法チェック終わり！');
       if (GabaFlag) {
         alert(ErrMsg);
       } else {
