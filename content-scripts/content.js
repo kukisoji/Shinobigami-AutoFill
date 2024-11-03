@@ -44,6 +44,7 @@ async function searchArrayAndOutput() {
   let id_name = "ninpou." + String(i);
   let outputElement;
   let ColumnValue;
+  let targetSkillElement;
   const regexToRemove =
     /L|　|\s|→|\＜|\＞|\(|\/|\)|離し|かわし|殺し|崩し|宿し|晴らし|必要生命|二度限定|使用許諾|回避反動|不安要素|必要物資|双子/g;
   const batten_yurusumazi = /(☓|☒|✗|✘|×|✕|❌️|✖|❎️|X|x)天/;
@@ -84,9 +85,12 @@ async function searchArrayAndOutput() {
           document.getElementById(id_name + ".cost").value = result
             ? result[3]
             : "";
-          document.getElementById(id_name + ".targetSkill").value = result
-            ? result[4]
-            : "";
+          const targetSkillElement = document.getElementById(id_name + '.targetSkill');
+          // .targetSkill要素が存在し、値が空でない場合は更新しない
+          if (targetSkillElement && targetSkillElement.value === "") {
+            targetSkillElement.value = result ? result[4] : '';
+          }
+
         }
 
         document.getElementById(id_name + ".page").value = result
