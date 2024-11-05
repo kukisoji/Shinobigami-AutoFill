@@ -44,6 +44,8 @@ async function searchArrayAndOutput() {
   let id_name = "ninpou." + String(i);
   let outputElement;
   let ColumnValue;
+  let rangeElement;
+  iet costElement;
   let targetSkillElement;
   const regexToRemove =
     /L|　|\s|→|\＜|\＞|\(|\/|\)|離し|かわし|殺し|崩し|宿し|晴らし|必要生命|二度限定|使用許諾|回避反動|不安要素|必要物資|双子/g;
@@ -79,14 +81,16 @@ async function searchArrayAndOutput() {
           document.getElementById(id_name + ".cost").value = "なし";
           document.getElementById(id_name + ".targetSkill").value = "なし";
         } else if (ColumnValue == "攻撃" || ColumnValue == "サポート") {
-          document.getElementById(id_name + ".range").value = result
-            ? result[2]
-            : "";
-          document.getElementById(id_name + ".cost").value = result
-            ? result[3]
-            : "";
+          
+          const rangeElement = document.getElementById(id_name + '.range');
+          if (rangeElement && rangeElement.value === "") {
+            rangeElement.value = result ? result[2] : '';
+          }
+          const costElement = document.getElementById(id_name + '.cost');
+          if (costElement && costElement.value === "") {
+            costElement.value = result ? result[3] : '';
+          }
           const targetSkillElement = document.getElementById(id_name + '.targetSkill');
-          // .targetSkill要素が存在し、値が空でない場合は更新しない
           if (targetSkillElement && targetSkillElement.value === "") {
             targetSkillElement.value = result ? result[4] : '';
           }
