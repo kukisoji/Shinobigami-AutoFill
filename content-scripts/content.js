@@ -45,7 +45,7 @@ async function searchArrayAndOutput() {
   let outputElement;
   let ColumnValue;
   let rangeElement;
-  iet costElement;
+  let costElement;
   let targetSkillElement;
   const regexToRemove =
     /L|　|\s|→|\＜|\＞|\(|\/|\)|離し|かわし|殺し|崩し|宿し|晴らし|必要生命|二度限定|使用許諾|回避反動|不安要素|必要物資|双子/g;
