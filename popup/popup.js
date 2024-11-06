@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
   const searchBtn = document.getElementById('search-btn');
+  const researchBtn = document.getElementById('research-btn');
   const newActionBtn = document.getElementById('gaba-check');
   let isScriptInjected = false;
 
@@ -41,6 +42,13 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  if (researchBtn) {
+    searchBtn.addEventListener('click', async function () {
+      console.log("検索と出力開始！");
+      await sendMessageToContentScript('searchArrayAndOutput');
+    });
+  }
+  
   if (newActionBtn) {
     newActionBtn.addEventListener('click', async function () {
       await sendMessageToContentScript('GabaCheckStart');
