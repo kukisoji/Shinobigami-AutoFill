@@ -43,6 +43,29 @@ html {
     border-bottom: 2px solid #b84c00;
 }
 
+#research-btn {
+    margin: 3px;
+    display: inline-block;
+    padding: 5px 10px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+    background-color: #eb6100;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 5px solid #b84c00;
+}
+
+#research-btn:hover {
+    margin-top: 6px;
+    background: #f56500;
+    border-bottom: 2px solid #b84c00;
+}
+
 #gaba-check {
   margin: 3px;
   display: inline-block;
