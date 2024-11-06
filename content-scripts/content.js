@@ -19,12 +19,18 @@ const debouncedGabaCheckStart = debounce(() => {
   GabaCheckStart();
 }, 300); // 300ミリ秒のデバウンス時間
 
+let reload = 0
+
 //メッセージキャッチャー
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.action === "searchArrayAndOutput") {
     console.log("忍法名見つけたいなぁ");
     searchArrayAndOutput();
-  } else if (request.action === "GabaCheckStart") {
+  } else if (request.action === "searchArrayAndOutput2") {
+    console.log("いろいろキープしつつ忍法名見つけたいなぁ");
+    const reload = 1
+    searchArrayAndOutput();
+  }else if (request.action === "GabaCheckStart") {
     console.log("ガﾞバﾞいﾞ子ﾞはﾞいﾞねﾞぇﾞかﾞぁﾞ！");
     debouncedGabaCheckStart();
   }
@@ -48,7 +54,7 @@ async function searchArrayAndOutput() {
   let costElement;
   let targetSkillElement;
   const regexToRemove =
-    /L|　|\s|→|\＜|\＞|\(|\/|\)|離し|かわし|殺し|崩し|宿し|晴らし|必要生命|二度限定|使用許諾|回避反動|不安要素|必要物資|双子/g;
+    /L|　|\s|→|\＜|\＞|\(|\/|\)|離し|かわし|殺し|崩し|宿し|晴らし|必要生命|二度限定|使用許諾|回避反動|不安要素|必要物資|双子|宗家|ニンジャファイター|詩才|漂流神|祭事委員会|特別交流生|姉妹/g;
   const batten_yurusumazi = /(☓|☒|✗|✘|×|✕|❌️|✖|❎️|X|x)天/;
 
   //忍法の数だけぐーるぐる
@@ -81,20 +87,24 @@ async function searchArrayAndOutput() {
           document.getElementById(id_name + ".cost").value = "なし";
           document.getElementById(id_name + ".targetSkill").value = "なし";
         } else if (ColumnValue == "攻撃" || ColumnValue == "サポート") {
-          
-          const rangeElement = document.getElementById(id_name + '.range');
-          if (rangeElement && rangeElement.value === "") {
-            rangeElement.value = result ? result[2] : '';
+          if (reload == 0 ) {
+            document.getElementById(id_name + '.range').value = result ? result[2] : '';
+            document.getElementById(id_name + '.cost').value =  result ? result[3] : '';
+            document.getElementById(id_name + '.targetSkill').value = result ? result[4] : '';
+          } else {
+            const rangeElement = document.getElementById(id_name + '.range');
+            if (rangeElement && rangeElement.value === "") {
+              rangeElement.value = result ? result[2] : '';
+            }
+            const costElement = document.getElementById(id_name + '.cost');
+            if (costElement && costElement.value === "") {
+              costElement.value = result ? result[3] : '';
+            }
+            const targetSkillElement = document.getElementById(id_name + '.targetSkill');
+            if (targetSkillElement && targetSkillElement.value === "") {
+              targetSkillElement.value = result ? result[4] : '';
+            }
           }
-          const costElement = document.getElementById(id_name + '.cost');
-          if (costElement && costElement.value === "") {
-            costElement.value = result ? result[3] : '';
-          }
-          const targetSkillElement = document.getElementById(id_name + '.targetSkill');
-          if (targetSkillElement && targetSkillElement.value === "") {
-            targetSkillElement.value = result ? result[4] : '';
-          }
-
         }
 
         document.getElementById(id_name + ".page").value = result
