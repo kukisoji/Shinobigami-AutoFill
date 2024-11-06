@@ -88,7 +88,7 @@ async function searchArrayAndOutput() {
           document.getElementById(id_name + ".cost").value = "なし";
           document.getElementById(id_name + ".targetSkill").value = "なし";
         } else if (ColumnValue == "攻撃" || ColumnValue == "サポート") {
-          if (reload == 0 ) {
+          if (reload == 1 ) {
             document.getElementById(id_name + '.range').value = result ? result[2] : '';
             document.getElementById(id_name + '.cost').value =  result ? result[3] : '';
             document.getElementById(id_name + '.targetSkill').value = result ? result[4] : '';
