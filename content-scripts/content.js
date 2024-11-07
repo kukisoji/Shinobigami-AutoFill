@@ -53,7 +53,6 @@ async function searchArrayAndOutput() {
   let rangeElement;
   let costElement;
   let targetSkillElement;
-  let newTargetSkillValue;
   const regexToRemove =
     /L|　|\s|→|\＜|\＞|\(|\/|\)|離し|かわし|殺し|崩し|宿し|晴らし|必要生命|二度限定|使用許諾|回避反動|不安要素|必要物資|双子|宗家|ニンジャファイター|詩才|漂流神|祭事委員会|特別交流生|姉妹/g;
   const batten_yurusumazi = /(☓|☒|✗|✘|×|✕|❌️|✖|❎️|X|x)天/;
@@ -102,10 +101,7 @@ async function searchArrayAndOutput() {
               costElement.value = result ? result[3] : '';
             }
             const targetSkillElement = document.getElementById(id_name + '.targetSkill');
-            if (targetSkillElement) {
-              const newTargetSkillValue = result ? result[4] : '';
-            }
-            if (!(targetSkillElement.value !== "" && newTargetSkillValue === "自由")) {
+            if (targetSkillElement && targetSkillElement.value === "") {
               targetSkillElement.value = result ? result[4] : '';
             }
           }
