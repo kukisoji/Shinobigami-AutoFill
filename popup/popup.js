@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (researchBtn) {
     searchBtn.addEventListener('click', async function () {
       console.log("検索と再出力開始！");
-      await sendMessageToContentScript('searchArrayAndOutput2');
+      await sendMessageToContentScript('searchArrayAndReOutput');
     });
   }
   
