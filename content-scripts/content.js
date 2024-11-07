@@ -26,7 +26,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.action === "searchArrayAndOutput") {
     console.log("忍法名見つけたいなぁ");
     searchArrayAndOutput();
-  } else if (request.action === "searchArrayAndOutput2") {
+  } else if (request.action === "searchArrayAndReOutput") {
     console.log("いろいろキープしつつ忍法名見つけたいなぁ");
     const reload = 1
     searchArrayAndOutput();
