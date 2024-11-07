@@ -43,7 +43,7 @@ html {
     border-bottom: 2px solid #b84c00;
 }
 
-#research-btn {
+#reoutput-btn {
     margin: 3px;
     display: inline-block;
     padding: 5px 10px;
@@ -51,19 +51,19 @@ html {
     font-weight: bold;
     text-align: center;
     text-decoration: none;
-    background-color: #eb6100;
+    background-color: #0061ee;
     color: #fff;
     border: none;
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.3s ease;
-    border-bottom: 5px solid #b84c00;
+    border-bottom: 5px solid #004cbb;
 }
 
-#research-btn:hover {
+#reoutput-btn:hover {
     margin-top: 6px;
-    background: #f56500;
-    border-bottom: 2px solid #b84c00;
+    background: #0065ee;
+    border-bottom: 2px solid #004c00;
 }
 
 #gaba-check {

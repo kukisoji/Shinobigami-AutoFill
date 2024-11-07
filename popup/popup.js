@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
   const searchBtn = document.getElementById('search-btn');
-  const researchBtn = document.getElementById('research-btn');
+  const reoutputBtn = document.getElementById('reoutput-btn');
   const newActionBtn = document.getElementById('gaba-check');
   let isScriptInjected = false;
 
@@ -42,8 +42,8 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  if (researchBtn) {
-    searchBtn.addEventListener('click', async function () {
+  if (reoutputBtn) {
+    reoutputBtn.addEventListener('click', async function () {
       console.log("検索と再出力開始！");
       await sendMessageToContentScript('searchArrayAndReOutput');
     });
