@@ -49,10 +49,12 @@ async function searchArrayAndOutput() {
 
   let i = 0;
   let id_name = "ninpou." + String(i);
+  let matchedEffect = ""
+  let matchedSkill = ""
 
   //忍法名から不必要な文言を取り除く用
   const regexToRemove =
-    /L|\s|→|\＜|\＞|\(|\/|\)|（|）|【|】|追加忍法|かわし|離し|殺し|崩し|宿し|晴らし|必要生命|二度限定|使用許諾|回避反動|不安要素|必要物資|双子/g;
+    /L|\s|→|\＜|\＞|\(|\/|\)|（|）|【|】|追加忍法|かわし|離し|殺し|崩し|宿し|晴らし|必要生命|二度限定|使用許諾|回避反動|不安要素|必要物資|双子|1|2|3|4|5|6|7|8|9|①|②|③|④|⑤|⑥|⑦|⑧|⑨/g;
 
   //✕天を処理できる形に変更する用
   const batten_yurusumazi = /(☓|☒|✗|✘|×|✕|❌️|✖|❎️|X|x)天/;
@@ -74,6 +76,7 @@ async function searchArrayAndOutput() {
     "拡視器", //瞳術もしくは千里眼の術の忍法の間合を2上昇
     "鷹の目", //射撃戦忍法のみ間合1上昇
     "鈎陣", //集団戦攻撃のみ間合1上昇
+    "忍法開発",//離しを付ければ間合1上昇
   ];
   const ChangeNinpo_skillChange = [
     "機忍", //コスト1上昇&絡繰術に特技変更
@@ -224,7 +227,12 @@ async function searchArrayAndOutput() {
       const result = arrayData.find((row) => row[result_col.name] == InfoRem);
 
       //忍法が見つかったら処理開始。見つからなかったら無視します。
-      if (!result) return;
+      if (!result) {
+        console.warn(`忍法が見つかりませんでした: ${InfoRem}`);
+        i++;
+        id_name = "ninpou." + ("000" + i).slice(-3);
+        continue; // return せずに次のループへ
+      };
       elements.type.value = result ? result[result_col.type] : "";
 
       //忍法のタイプに合わせて処理を変更
@@ -242,18 +250,28 @@ async function searchArrayAndOutput() {
         targetSkill = result ? result[result_col.skill] : "";
         //好きな◯術用に、あらかじめ変更前特技の分野を調べておく
         SkillField = getSkillList(before_targetskill);
+        //複数追加忍法対策(指定特技同じなのは知らん)
+        if (info.includes("追加忍法") && specialEffectList.length > 0) {
+          // 追加忍法の中から、現在の特技（before_targetskill）と一致するものを探す
+          const matchedOugi = specialEffectList.find(([, skill]) => skill === before_targetskill);
+          if (matchedOugi) {
+            // 一致する追加忍法を適用
+            matchedSkill = matchedOugi[1]; //追加忍法の特技部分を適応
+            matchedEffect = matchedOugi[0]; // 追加忍法のキーワード部分を適用
+          } else {
+            // 一致しない場合は最初の追加忍法を適用
+            matchedSkill = specialEffectList[0][1];
+            matchedEffect = specialEffectList[0][0];
+          }
+        }
         if (
           FlagListNinpo_skillChange.some((flag) => flag === true) ||
           backgroundList.includes("外国妖怪") ||
           (specialEffectList.length > 0 && info.includes("追加忍法"))
         ) {
-          if (
-            info.includes("追加忍法") &&
-            !specialEffectList.some(
-              ([, skillValue]) => skillValue === before_targetskill
-            )
-          ) {
-            elements.targetSkill.value = specialEffectList[0][1];
+          if (info.includes("追加忍法") && specialEffectList.length > 0) { 
+              elements.targetSkill.value = matchedSkill;//追加忍法の処理
+            }
           } else if (
             ninpoList.includes("機忍") && //機忍所持
             elements.type.value == "サポート" && //サポート忍法
@@ -262,7 +280,6 @@ async function searchArrayAndOutput() {
             ZyoiRyuha != result[result_col.ryuha] //所属流派の忍法ではない(他流派機忍対策)
           ) {
             elements.targetSkill.value = "絡繰術";
-          }
         } else if (
           SkillField != targetSkill && //事前に入ってた特技が好きな◯術に当てはまらない
           targetSkill != "自由" && //指定特技が自由ではない
@@ -311,11 +328,10 @@ async function searchArrayAndOutput() {
           }
 
           if (
-            specialEffectList.length > 0 &&
+              (specialEffectList.length > 0 &&
             info.includes("追加忍法") &&
-            specialEffectList.some(([EffectElement]) =>
-              EffectElement.includes("離し")
-            )
+              matchedEffect.includes("離し"))||
+              (info.includes("離し") && ninpoList.includes("忍法開発"))
           ) {
             targetrange_int += RANGE_INCREMENT.SPECIAL_EFFECT;
             modified = true;
@@ -323,7 +339,6 @@ async function searchArrayAndOutput() {
         }
         elements.range.value = (() => {
           if (targetrange == "なし") return "なし";
-
           if (shouldAdjustRange) {
             return modified
               ? `${targetrange_int}(${result[result_col.range]})`
@@ -384,21 +399,16 @@ async function searchArrayAndOutput() {
               condition:
                 specialEffectList.length > 0 &&
                 info.includes("追加忍法") &&
-                specialEffectList.some(([EffectElement]) =>
-                  EffectElement.includes("減らし")
-                ),
+              matchedEffect.includes("減らし"),
               value: COST_ADJUSTMENT.SPECIAL_HERASHI,
             },
             {
               condition:
                 specialEffectList.length > 0 &&
                 info.includes("追加忍法") &&
-                specialEffectList.some(([EffectElement]) =>
-                  EffectElement.includes("気力消耗")
-                ),
+              matchedEffect.includes("気力消耗"),
               value: COST_ADJUSTMENT.SPECIAL_KIRYOKU,
-            },
-          ];
+          }];
 
           adjustments.forEach(({ condition, value }) => {
             if (condition) targetcost += value;
@@ -430,7 +440,6 @@ async function searchArrayAndOutput() {
           elements.cost.value = originalCost;
         }
       }
-
       //記載ページ
       elements.page.value = result ? result[result_col.page] : "";
 
@@ -464,18 +473,16 @@ async function searchArrayAndOutput() {
             console.log("保存された値がありません：", InfoRem);
           }
         });
-      }
-
-      i++;
-      id_name = "ninpou." + ("000" + i).slice(-3);
+      };
     } else {
       console.error("Target element not found");
-    }
-  }
-
+      }
+      i++;
+      id_name = "ninpou." + ("000" + i).slice(-3);
   //変更イベント着火(これを入れないと表面上変更されていないように見えちゃう)
   if (typeof updateUI === "function") {
     updateUI();
+    }
   }
 }
 
