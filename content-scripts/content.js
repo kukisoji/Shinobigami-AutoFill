@@ -287,6 +287,9 @@ async function searchArrayAndOutput() {
         ) {
           elements.targetSkill.value = targetSkill;
         }
+        if (elements.targetSkill.value != "なし" && targetSkill == "なし"){
+          elements.targetSkill.value = elements.targetSkill.value + "(なし)";
+        }
         if (!elements.targetSkill.value || elements.targetSkill.value == "") {
           //空白なら突っ込んでおく
           elements.targetSkill.value = targetSkill;
