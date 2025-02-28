@@ -271,8 +271,7 @@ async function searchArrayAndOutput() {
         ) {
           if (info.includes("追加忍法") && specialEffectList.length > 0) { 
               elements.targetSkill.value = matchedSkill;//追加忍法の処理
-            }
-          } else if (
+          }else if (
             ninpoList.includes("機忍") && //機忍所持
             elements.type.value == "サポート" && //サポート忍法
             Kinin_list.includes(result[result_col.ryuha]) && //忍法の元流派が機忍で取ってこれる範囲か
@@ -286,9 +285,11 @@ async function searchArrayAndOutput() {
           !targetSkill.includes(before_targetskill) //事前に入ってた特技が忍法の指定特技一覧に含まれない
         ) {
           elements.targetSkill.value = targetSkill;
+          }
         }
         if (elements.targetSkill.value != "なし" && targetSkill == "なし"){
-          elements.targetSkill.value = elements.targetSkill.value + "(なし)";
+          let changedskill = elements.targetSkill.value
+          elements.targetSkill.value = changedskill + "(なし)";
         }
         if (!elements.targetSkill.value || elements.targetSkill.value == "") {
           //空白なら突っ込んでおく
