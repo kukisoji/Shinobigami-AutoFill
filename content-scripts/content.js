@@ -287,13 +287,13 @@ async function searchArrayAndOutput() {
           elements.targetSkill.value = targetSkill;
           }
         }
+        if (!elements.targetSkill.value || elements.targetSkill.value == "") {
+        //空白なら突っ込んでおく
+        elements.targetSkill.value = targetSkill;
+        }
         if (elements.targetSkill.value != "なし" && targetSkill == "なし"){
           let changedskill = elements.targetSkill.value
           elements.targetSkill.value = changedskill + "(なし)";
-        }
-        if (!elements.targetSkill.value || elements.targetSkill.value == "") {
-          //空白なら突っ込んでおく
-          elements.targetSkill.value = targetSkill;
         }
 
         //間合関連(拡視器の関係で特技決定後)
