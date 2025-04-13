@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "半自動忍法概要埋め立て機",
   "description": "シノビガミのキャラシートを作成する際に、忍法欄を埋めたり、不備がないかチェックが出来ます。",
-  "version": "2.2.2",
+  "version": "2.2.3",
   "icons": {
     "16": "icon/16.png",
     "32": "icon/32.png",
