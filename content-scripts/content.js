@@ -56,7 +56,7 @@ async function searchArrayAndOutput() {
   const regexToRemove =
     /L|\s|\＜|\＞|\(|\/|\)|（|）|【|】|追加忍法|かわし|離し|殺し|崩し|宿し|晴らし|必要生命|二度限定|使用許諾|回避反動|不安要素|必要物資|双子|外国妖怪|/g;
   //1|2|3|4|5|6|7|8|9|①|②|③|④|⑤|⑥|⑦|⑧|⑨|
-  const NinpouchangeNinpou = /機忍|魔具螺|魔血|昔日|ご当地戦法|奥津城|転校生|爪紅|開祖|真蛇|滅苦|法盤|備|怪厨子|遊意|魔装|換装|重装/g;
+  const NinpouchangeNinpou = /機忍|魔具螺|魔血|昔日|ご当地戦法|奥津城|転校生|爪紅|開祖|真蛇|滅苦|法盤|備|怪厨子|遊意|眼力|魔装|換装|重装|忍法開発/g;
 
   //✕天を処理できる形に変更する用
   const batten_yurusumazi = /(☓|☒|✗|✘|×|✕|❌️|✖|❎️|X|x)天/;
@@ -232,12 +232,13 @@ async function searchArrayAndOutput() {
       }
 
       //忍法の検索
-      const result = arrayData.find((row) => row[result_col.name] == InfoRem);
-      const result2 = arrayData.find((row) => row[result_col.name] == InforowRem);
+      let result = arrayData.find((row) => row[result_col.name] == InfoRem);
+      let result2 = arrayData.find((row) => row[result_col.name] == InforowRem);
 
       //忍法が見つかったら処理開始。見つからなかったら無視します。
       if (!result && result2) {
         InfoRem = InforowRem;
+        result = result2;
       }else if(!result){
         console.warn(`忍法が見つかりませんでした: ${InfoRem}`);
         i++;
