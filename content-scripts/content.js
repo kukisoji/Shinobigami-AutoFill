@@ -216,10 +216,17 @@ async function searchArrayAndOutput() {
   let gaikoku_change = false;
 
   //忍法の数だけぐーるぐる
-  while (document.getElementById(id_name)) {
-    const elements = getCachedElements(id_name);
-    const targetElement = elements.name;
+  // document.querySelectorAll を使用して ninpou.XXX.name 要素をすべて取得
+  const ninpouNameElements = document.querySelectorAll(
+    '[id^="ninpou."][id$=".name"]'
+  );
+
+  for (const targetElement of ninpouNameElements) {
+    const baseId = targetElement.id.replace(/\.name$/, ""); // IDから '.name' を除去してベースIDを取得。こうしないと色々とめんどくさい
+    const elements = getCachedElements(baseId); // ベースIDを使って関連要素を取得
+
     if (targetElement) {
+      // targetElement は .name 要素
       let info = targetElement.value || targetElement.textContent;
 
       //忍法名から不要な文言を削除
@@ -552,15 +559,15 @@ async function searchArrayAndOutput() {
         });
       }
     } else {
-      console.error("Target element not found");
+      // このケースは querySelectorAll('[id$=".name"]') を使っているので基本的には発生しないはず
+      console.error(`Target element not found for baseId: ${baseId}`);
     }
-    i++;
-    id_name = "ninpou." + ("000" + i).slice(-3);
+
     //変更イベント着火(これを入れないと表面上変更されていないように見えちゃう)
     if (typeof updateUI === "function") {
       updateUI();
     }
-  }
+  } // ループ終了
 }
 
 //ガバチェック
@@ -792,11 +799,16 @@ async function GabaCheckStart() {
       console.log("奥義チェック終わり！");
 
       //忍法の特技チェック
-      while (document.getElementById(id_name)) {
-        const elements = getCachedElements(id_name);
+      const ninpouTargetSkillElements = document.querySelectorAll(
+        '[id^="ninpou."][id$=".targetSkill"]'
+      );
 
-        if (elements.targetSkill) {
-          const targetSkillValue = elements.targetSkill.value;
+      for (const targetSkillElement of ninpouTargetSkillElements) {
+        const baseId = targetSkillElement.id.replace(/\.targetSkill$/, ""); // IDから '.targetSkill' を除去
+        const nameElement = document.getElementById(`${baseId}.name`); // 対応する .name 要素を取得
+
+        if (targetSkillElement) {
+          const targetSkillValue = targetSkillElement.value;
           if (
             targetSkillValue === "" ||
             targetSkillValue === "自由" ||
@@ -804,13 +816,11 @@ async function GabaCheckStart() {
           ) {
             GabaFlag = true;
             ErrMsg +=
-              document.getElementById(id_name + ".name").value +
+              (nameElement ? nameElement.value : `忍法(${baseId})`) + // .name 要素があればその値、なければIDで表示
               "の指定特技がありません。\n";
           }
         }
-        console.log("忍法チェックヨシ！：", id_name);
-        i++;
-        id_name = "ninpou." + ("000" + i).slice(-3);
+        console.log("忍法チェックヨシ！：", baseId);
       }
       console.log("忍法チェック終わり！");
 
