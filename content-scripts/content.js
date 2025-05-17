@@ -175,7 +175,7 @@ async function searchArrayAndOutput() {
     FlagListNinpo_costdown.some(Boolean) ||
     FlagListNinpo_costup.some(Boolean) ||
     (specialEffectList.length > 0 &&
-      (EffectElement.includes("減らし") || EffectElement.includes("気力消耗")));
+      (EffectElement.includes("減らし")) || (EffectElement.includes("気力消耗")));
 
   // 上位流派のマッピング
   const RYUHA_MAP = [
