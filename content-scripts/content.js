@@ -54,8 +54,9 @@ async function searchArrayAndOutput() {
 
   //忍法名から不必要な文言を取り除く用
   const regexToRemove =
-    /L|\s|\(爪紅\)|\(魔具螺\)\→|\＜|\＞|\(|\/|\)|（|）|【|】|追加忍法|かわし|離し|殺し|崩し|宿し|晴らし|必要生命|二度限定|使用許諾|回避反動|不安要素|必要物資|双子|外国妖怪|/g;
+    /L|\s|\＜|\＞|\(|\/|\)|（|）|【|】|追加忍法|かわし|離し|殺し|崩し|宿し|晴らし|必要生命|二度限定|使用許諾|回避反動|不安要素|必要物資|双子|外国妖怪|/g;
   //1|2|3|4|5|6|7|8|9|①|②|③|④|⑤|⑥|⑦|⑧|⑨|
+  const NinpouchangeNinpou = /機忍|魔具螺|魔血|昔日|ご当地戦法|奥津城|転校生|爪紅|開祖|真蛇|滅苦|法盤|備|怪厨子|遊意|眼力|魔装|換装|重装|忍法開発/g;
 
   //✕天を処理できる形に変更する用
   const batten_yurusumazi = /(☓|☒|✗|✘|×|✕|❌️|✖|❎️|X|x)天/;
@@ -174,7 +175,7 @@ async function searchArrayAndOutput() {
     FlagListNinpo_costdown.some(Boolean) ||
     FlagListNinpo_costup.some(Boolean) ||
     (specialEffectList.length > 0 &&
-      (EffectElement.includes("減らし") || EffectElement.includes("気力消耗")));
+      (EffectElement.includes("減らし")) || (EffectElement.includes("気力消耗")));
 
   // 上位流派のマッピング
   const RYUHA_MAP = [
@@ -229,7 +230,8 @@ async function searchArrayAndOutput() {
       let info = targetElement.value || targetElement.textContent;
 
       //忍法名から不要な文言を削除
-      let InfoRem = info.replace(regexToRemove, "");
+      let InforowRem = info.replace(regexToRemove, "");
+      let InfoRem = InforowRem.replace(NinpouchangeNinpou, "");
 
       //✕天を確実に適した形にする。許さねぇ✕天
       if (batten_yurusumazi.test(InfoRem)) {
@@ -237,10 +239,14 @@ async function searchArrayAndOutput() {
       }
 
       //忍法の検索
-      const result = arrayData.find((row) => row[result_col.name] == InfoRem);
+      let result = arrayData.find((row) => row[result_col.name] == InfoRem);
+      let result2 = arrayData.find((row) => row[result_col.name] == InforowRem);
 
       //忍法が見つかったら処理開始。見つからなかったら無視します。
-      if (!result) {
+      if (!result && result2) {
+        InfoRem = InforowRem;
+        result = result2;
+      }else if(!result){
         console.warn(`忍法が見つかりませんでした: ${InfoRem}`);
         i++;
         id_name = "ninpou." + ("000" + i).slice(-3);
@@ -300,7 +306,7 @@ async function searchArrayAndOutput() {
             final_skill = matchedSkill; //追加忍法の処理
           } else if (
             ninpoList.includes("爪紅") && //爪紅所持
-            info.includes("(爪紅)") && //忍法名に(爪紅)と入っているか
+            info.includes("爪紅") && //忍法名に爪紅と入っているか
             targetSkill != "九ノ一の術" && //元の忍法の指定特技が九ノ一の術ではないか
             tsumabeni_change == false //まだ爪紅で忍法を変更していないかどうか
           ) {
@@ -310,7 +316,7 @@ async function searchArrayAndOutput() {
             tsumabeni_costdown = true;
           } else if (
             ninpoList.includes("魔具螺") && //魔具螺所持
-            info.includes("(魔具螺)") && //忍法名に(魔具螺)と入っているか
+            info.includes("魔具螺") && //忍法名に魔具螺と入っているか
             magura_change == false //まだ魔具螺で忍法を変更していないかどうか
           ) {
             magura_change = true;
@@ -347,7 +353,7 @@ async function searchArrayAndOutput() {
           } else if (
             gaikoku_change == false && //まだ外国妖怪で忍法を変更していないかどうか
             backgroundList.includes("外国妖怪") && //外国妖怪を持っているか
-            info.includes("外国妖怪") //忍法名に(外国妖怪)と入っているか
+            info.includes("外国妖怪") //忍法名に外国妖怪と入っているか
           ) {
             gaikoku_change = true;
             final_change = true;
