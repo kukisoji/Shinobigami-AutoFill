@@ -19,7 +19,7 @@ https://chromewebstore.google.com/detail/okieopfkmddkjnpllcikapficnagpkal</br>
 
 <h2>禁止事項</h2>
 以下の行為は行わないでください。</br>
-・本拡張機能の再配布。</br>
+・一切手を加えない状態での本拡張機能の再配布。(改造して配布するのはOKです)</br>
 ・自作と偽っての宣伝。</br>
 ・冒険企画局様及びMASASHIGE様の知的財産権、著作権、商標権、その他の権利を侵害する、または侵害するおそれのある方法での使用。</br>
 ・冒険企画局様及びMASASHIGE様の名誉や信用を毀損する行為。</br>
