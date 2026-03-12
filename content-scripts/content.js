@@ -1,3 +1,76 @@
+(function() {
+if (window.__SHINOBIGAMI_AUTOFILL_INJECTED) return;
+window.__SHINOBIGAMI_AUTOFILL_INJECTED = true;
+
+// ユーザー報告用グローバルハンドラー
+window.addEventListener("error", function (event) {
+  if (event.filename && event.filename.includes("content.js")) {
+    alert("【忍神AutoFill】致命的なエラーが発生しました。開発者に報告してください。\n詳細: " + event.message);
+  }
+});
+window.addEventListener("unhandledrejection", function (event) {
+  alert("【忍神AutoFill】非同期処理でエラーが発生しました。開発者に報告してください。\n詳細: " + (event.reason ? event.reason.message || event.reason : "Unknown error"));
+});
+
+// 定数定義
+const DEBOUNCE_DELAY_MS = 300;
+const RACE_NINJA = "1";
+
+const RYUHA_CODE = {
+  HASHA: 0,
+  KURAMA: 1,
+  HAGURE: 2,
+  HIRASAKA: 3,
+  OTOGI: 4,
+  ONI: 5,
+  INVALID: 9,
+};
+
+const CONDITION = {
+  UPPER_STYLE: 0,
+  LOWER_STYLE: 1, // 基本的には0かそれ以外(1以上)で判定されているため便宜上定義
+  NINPO_REQUIRED: 2,
+  SKILL_REQUIRED: 3,
+  SKILL_DOMAIN_REQUIRED: 4,
+  SPECIAL_RACE_OR_RYUHA: 5,
+};
+
+const SKILL_CATEGORY = {
+  KIJUTSU: 0,
+  TAIJUTSU: 1,
+  NINJUTSU: 2,
+  BOJUTSU: 3,
+  SENJUTSU: 4,
+  YOJUTSU: 5,
+};
+
+const CONST_SKILLS = {
+  KIJUTSU: [
+    "絡繰術", "火術", "水術", "針術", "仕込み", "衣装術", 
+    "縄術", "登術", "拷問術", "壊器術", "掘削術",
+  ],
+  TAIJUTSU: [
+    "騎乗術", "砲術", "手裏剣術", "手練", "身体操術", "歩法", 
+    "走法", "飛術", "骨法術", "刀術", "怪力",
+  ],
+  NINJUTSU: [
+    "生存術", "潜伏術", "遁走術", "盗聴術", "腹話術", "隠形術", 
+    "変装術", "香術", "分身の術", "隠蔽術", "第六感",
+  ],
+  BOJUTSU: [
+    "医術", "毒術", "罠術", "調査術", "詐術", "対人術", 
+    "遊芸", "九ノ一の術", "傀儡の術", "流言の術", "経済力",
+  ],
+  SENJUTSU: [
+    "兵糧術", "鳥獣術", "野戦術", "地の利", "意気", "用兵術", 
+    "記憶術", "見敵術", "暗号術", "伝達術", "人脈",
+  ],
+  YOJUTSU: [
+    "異形化", "召喚術", "死霊術", "結界術", "封術", "言霊術", 
+    "幻術", "瞳術", "千里眼の術", "憑依術", "呪術",
+  ],
+};
+
 // デバウンス関数
 function debounce(func) {
   let timeout = null;
@@ -48,6 +121,9 @@ async function searchArrayAndOutput() {
     ]);
 
   let i = 0;
+  const arrayDataMap = new Map();
+  if (arrayData) arrayData.forEach(row => arrayDataMap.set(row[result_col.name], row));
+
   let id_name = "ninpou." + String(i);
   let matchedEffect = "";
   let matchedSkill = "";
@@ -175,7 +251,7 @@ async function searchArrayAndOutput() {
     FlagListNinpo_costdown.some(Boolean) ||
     FlagListNinpo_costup.some(Boolean) ||
     (specialEffectList.length > 0 &&
-      (EffectElement.includes("減らし")) || (EffectElement.includes("気力消耗")));
+      specialEffectList.some(([effect]) => effect.includes("減らし") || effect.includes("気力消耗")));
 
   // 上位流派のマッピング
   const RYUHA_MAP = [
@@ -239,14 +315,14 @@ async function searchArrayAndOutput() {
       }
 
       //忍法の検索
-      let result = arrayData.find((row) => row[result_col.name] == InfoRem);
-      let result2 = arrayData.find((row) => row[result_col.name] == InforowRem);
+      let result = arrayDataMap.get(InfoRem);
+      let result2 = arrayDataMap.get(InforowRem);
 
       //忍法が見つかったら処理開始。見つからなかったら無視します。
       if (!result && result2) {
         InfoRem = InforowRem;
         result = result2;
-      }else if(!result){
+      } else if (!result) {
         console.warn(`忍法が見つかりませんでした: ${InfoRem}`);
         i++;
         id_name = "ninpou." + ("000" + i).slice(-3);
@@ -576,17 +652,15 @@ async function GabaCheckStart() {
   Ryuha_data = await loadFile("Ryuha_data.json");
 
   //タイプが忍者ならチェック開始
-  if (document.getElementById("base.race").value == "1") {
-    let i = 0;
-    let id_name = "ninpou." + String(i);
+  if (document.getElementById("base.race")?.value == RACE_NINJA) {
     let s = 0;
     let sp_name = "secret.specialEffect." + String(s);
     let GabaFlag = false;
     let ErrMsg = "以下の箇所でガバが発見されました。\n";
     let selectedCount;
-    let RyuhaFlag = 9;
+    let RyuhaFlag = RYUHA_CODE.INVALID;
     let ZyoiRyuha;
-    let KaiRyuha = document.getElementById("base.substyle").value;
+    let KaiRyuha = document.getElementById("base.substyle")?.value || "";
 
     //流派指定部分を埋めたりちょっと変えたり
     if (!KaiRyuha.trim()) {
@@ -618,7 +692,7 @@ async function GabaCheckStart() {
 
       RyuhaFlag = zyoiRyuha_get();
 
-      if (RyuhaFlag == 9) {
+      if (RyuhaFlag == RYUHA_CODE.INVALID) {
         console.log("予期しない値です：", ZyoiRyuha);
         GabaFlag = true;
         ErrMsg =
@@ -626,13 +700,13 @@ async function GabaCheckStart() {
       }
 
       //上位流派が正しく記入されている場合のみ続行
-      if (RyuhaFlag != 9) {
+      if (RyuhaFlag != RYUHA_CODE.INVALID) {
         selectedCount = document.querySelectorAll(
           `.input.skillcol.selected.selected > [id^="skills.row"][id$=".name${RyuhaFlag}"]`
         ).length;
 
         //所属条件の判定
-        if (result[1] == 0) {
+        if (result[1] == CONDITION.UPPER_STYLE) {
           //上位流派の場合
           if (selectedCount < 3) {
             GabaFlag = true;
@@ -645,7 +719,7 @@ async function GabaCheckStart() {
             ErrMsg = ErrMsg + "得意分野の特技数が2つ以下です。\n";
           }
           switch (result[1]) {
-            case 2:
+            case CONDITION.NINPO_REQUIRED:
               //所属条件が忍法の場合
               let NinpoElement = document.querySelectorAll(
                 `[id^="ninpou."][id*=".name"]`
@@ -665,7 +739,7 @@ async function GabaCheckStart() {
                   "を修得してください。\n";
               }
               break;
-            case 3:
+            case CONDITION.SKILL_REQUIRED:
               //所属条件が特技の場合
               const JokenTokugi = result.slice(2, 5);
               const filteredArray = JokenTokugi.filter(Boolean);
@@ -681,15 +755,14 @@ async function GabaCheckStart() {
                   "]\n";
               }
               if (KaiRyuha == "常夜") {
-                if (
-                  document.getElementById("base.sex").value.indexOf("女") == -1
-                ) {
+                const sexValue = document.getElementById("base.sex")?.value || "";
+                if (!sexValue.includes("女")) {
                   GabaFlag = true;
                   ErrMsg = ErrMsg + "常夜は女性のみ所属できます。\n";
                 }
               }
               break;
-            case 4:
+            case CONDITION.SKILL_DOMAIN_REQUIRED:
               //所属条件が特技分野の場合
               if (
                 document.querySelectorAll(
@@ -699,22 +772,22 @@ async function GabaCheckStart() {
                 GabaFlag = true;
                 let TarinaiBunya;
                 switch (result[2]) {
-                  case 0:
+                  case SKILL_CATEGORY.KIJUTSU:
                     TarinaiBunya = "器術";
                     break;
-                  case 1:
+                  case SKILL_CATEGORY.TAIJUTSU:
                     TarinaiBunya = "体術";
                     break;
-                  case 2:
+                  case SKILL_CATEGORY.NINJUTSU:
                     TarinaiBunya = "忍術";
                     break;
-                  case 3:
+                  case SKILL_CATEGORY.BOJUTSU:
                     TarinaiBunya = "謀術";
                     break;
-                  case 4:
+                  case SKILL_CATEGORY.SENJUTSU:
                     TarinaiBunya = "戦術";
                     break;
-                  case 5:
+                  case SKILL_CATEGORY.YOJUTSU:
                     TarinaiBunya = "妖術";
                     break;
                 }
@@ -737,12 +810,11 @@ async function GabaCheckStart() {
                 }
               }
               break;
-            case 5:
+            case CONDITION.SPECIAL_RACE_OR_RYUHA:
               //醜女衆および義経流
               if (KaiRyuha == "醜女衆") {
-                if (
-                  document.getElementById("base.sex").value.indexOf("女") == -1
-                ) {
+                const sexValue = document.getElementById("base.sex")?.value || "";
+                if (!sexValue.includes("女")) {
                   GabaFlag = true;
                   ErrMsg = ErrMsg + "醜女衆は女性のみ所属できます。";
                 }
@@ -751,9 +823,9 @@ async function GabaCheckStart() {
                   document.querySelectorAll(
                     `.input.skillcol.selected.selected > [id^="skills.row"][id$=".name1"]`
                   ).length +
-                    document.querySelectorAll(
-                      `.input.skillcol.selected.selected > [id^="skills.row"][id$=".name4"]`
-                    ).length <
+                  document.querySelectorAll(
+                    `.input.skillcol.selected.selected > [id^="skills.row"][id$=".name4"]`
+                  ).length <
                   1
                 ) {
                   GabaFlag = true;
@@ -769,26 +841,34 @@ async function GabaCheckStart() {
 
       //奥義チェック
       while (document.getElementById(sp_name)) {
-        // .skill 要素の確認
+        // .skill 要素と .name 要素の確認
         const skillElement = document.getElementById(sp_name + ".skill");
+        const nameElement = document.getElementById(sp_name + ".name");
 
         if (skillElement) {
           const skillValue = skillElement.value;
-          const ogiMatch = textContents.some((element) =>
-            skillValue.includes(element)
-          );
+          const nameValue = nameElement ? nameElement.value : "";
 
-          if (skillValue === "") {
-            GabaFlag = true;
-            ErrMsg +=
-              String(s + 1) + "番目の奥義の指定特技が記入されていません。\n";
-          } else if (!ogiMatch) {
-            GabaFlag = true;
-            ErrMsg +=
-              String(s + 1) +
-              "番目の奥義の指定特技として指定されている" +
-              skillValue +
-              "を修得していません。\n";
+          // 奥義名が空欄、もしくは「非公開」を含む場合はチェックをスキップする
+          if (nameValue === "" || nameValue.includes("非公開")) {
+            // スキップ
+          } else {
+            const ogiMatch = textContents.some((element) =>
+              skillValue.includes(element)
+            );
+
+            if (skillValue === "") {
+              GabaFlag = true;
+              ErrMsg +=
+                String(s + 1) + "番目の奥義の指定特技が記入されていません。\n";
+            } else if (!ogiMatch) {
+              GabaFlag = true;
+              ErrMsg +=
+                String(s + 1) +
+                "番目の奥義の指定特技として指定されている" +
+                skillValue +
+                "を修得していません。\n";
+            }
           }
         }
 
@@ -879,102 +959,17 @@ function createFlagList(ninpoList, changeList) {
 
 //特技分野リスト返却用関数
 function getSkillList(targetSkill) {
-  // 器術
-  const kijutsu_list = [
-    "絡繰術",
-    "火術",
-    "水術",
-    "針術",
-    "仕込み",
-    "衣装術",
-    "縄術",
-    "登術",
-    "拷問術",
-    "壊器術",
-    "掘削術",
-  ];
-  //体術
-  const taijutsu_list = [
-    "騎乗術",
-    "砲術",
-    "手裏剣術",
-    "手練",
-    "身体操術",
-    "歩法",
-    "走法",
-    "飛術",
-    "骨法術",
-    "刀術",
-    "怪力",
-  ];
-  //忍術
-  const ninjutsu_list = [
-    "生存術",
-    "潜伏術",
-    "遁走術",
-    "盗聴術",
-    "腹話術",
-    "隠形術",
-    "変装術",
-    "香術",
-    "分身の術",
-    "隠蔽術",
-    "第六感",
-  ];
-  //謀術
-  const bojutsu_list = [
-    "医術",
-    "毒術",
-    "罠術",
-    "調査術",
-    "詐術",
-    "対人術",
-    "遊芸",
-    "九ノ一の術",
-    "傀儡の術",
-    "流言の術",
-    "経済力",
-  ];
-  //戦術
-  const senjutsu_list = [
-    "兵糧術",
-    "鳥獣術",
-    "野戦術",
-    "地の利",
-    "意気",
-    "用兵術",
-    "記憶術",
-    "見敵術",
-    "暗号術",
-    "伝達術",
-    "人脈",
-  ];
-  //妖術
-  const yojutsu_list = [
-    "異形化",
-    "召喚術",
-    "死霊術",
-    "結界術",
-    "封術",
-    "言霊術",
-    "幻術",
-    "瞳術",
-    "千里眼の術",
-    "憑依術",
-    "呪術",
-  ];
-
-  if (kijutsu_list.includes(targetSkill)) {
+  if (CONST_SKILLS.KIJUTSU.includes(targetSkill)) {
     return "好きな器術";
-  } else if (taijutsu_list.includes(targetSkill)) {
+  } else if (CONST_SKILLS.TAIJUTSU.includes(targetSkill)) {
     return "好きな体術";
-  } else if (ninjutsu_list.includes(targetSkill)) {
+  } else if (CONST_SKILLS.NINJUTSU.includes(targetSkill)) {
     return "好きな忍術";
-  } else if (bojutsu_list.includes(targetSkill)) {
+  } else if (CONST_SKILLS.BOJUTSU.includes(targetSkill)) {
     return "好きな謀術";
-  } else if (senjutsu_list.includes(targetSkill)) {
+  } else if (CONST_SKILLS.SENJUTSU.includes(targetSkill)) {
     return "好きな戦術";
-  } else if (yojutsu_list.includes(targetSkill)) {
+  } else if (CONST_SKILLS.YOJUTSU.includes(targetSkill)) {
     return "好きな妖術";
   } else {
     return null; // 該当するリストがない場合
@@ -982,23 +977,23 @@ function getSkillList(targetSkill) {
 }
 
 function zyoiRyuha_get() {
-  ZyoiRyuha = document.getElementById("base.upperstyle").value;
+  ZyoiRyuha = document.getElementById("base.upperstyle")?.value || "";
 
   switch (ZyoiRyuha) {
     case "a":
-      return 0;
+      return RYUHA_CODE.HASHA;
     case "ab":
-      return 1;
+      return RYUHA_CODE.KURAMA;
     case "bc":
-      return 2;
+      return RYUHA_CODE.HAGURE;
     case "cd":
-      return 3;
+      return RYUHA_CODE.HIRASAKA;
     case "de":
-      return 4;
+      return RYUHA_CODE.OTOGI;
     case "e":
-      return 5;
+      return RYUHA_CODE.ONI;
     default:
-      return 9;
+      return RYUHA_CODE.INVALID;
   }
 }
 
@@ -1008,3 +1003,5 @@ function getElementsByPrefix(prefix, suffix) {
 }
 
 document.addEventListener("DOMContentLoaded", searchArrayAndOutput);
+
+})();
