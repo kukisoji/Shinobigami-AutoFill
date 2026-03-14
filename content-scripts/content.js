@@ -296,13 +296,21 @@
       '[id^="ninpou."][id$=".name"]'
     );
 
+    let stopAutofill = false;
     for (const targetElement of ninpouNameElements) {
+      if (stopAutofill) continue;
+
       const baseId = targetElement.id.replace(/\.name$/, ""); // IDから '.name' を除去してベースIDを取得。こうしないと色々とめんどくさい
       const elements = getCachedElements(baseId); // ベースIDを使って関連要素を取得
 
       if (targetElement) {
         // targetElement は .name 要素
         let info = targetElement.value || targetElement.textContent;
+        const effectValue = elements.effect ? elements.effect.value : "";
+        if (info.trim() === "以下、未使用" || effectValue.trim() === "以下、未使用") {
+          stopAutofill = true;
+          continue;
+        }
 
         //忍法名から不要な文言を削除
         let InforowRem = info.replace(regexToRemove, "");
@@ -837,8 +845,33 @@
           }
         }
 
+        // 忍法の事前スキャン（「以下、未使用」による全スキップ判定）
+        let skipAllOugiCheck = false;
+        let stopNinpoCheckBaseId = null;
+        let ninpouNameElementsForCheck = document.querySelectorAll(
+          '[id^="ninpou."][id$=".name"]'
+        );
+        for (const targetElement of ninpouNameElementsForCheck) {
+          const info = targetElement.value || targetElement.textContent;
+          const baseId = targetElement.id.replace(/\.name$/, "");
+          const effectElement = document.getElementById(`${baseId}.effect`);
+          const effectValue = effectElement ? effectElement.value : "";
+          if (info.trim() === "以下、未使用" || effectValue.trim() === "以下、未使用") {
+             stopNinpoCheckBaseId = baseId;
+             skipAllOugiCheck = true;
+             break;
+          }
+        }
+
+        let skipRemainingOugiCheck = skipAllOugiCheck;
+
         //奥義チェック
         while (document.getElementById(sp_name)) {
+          if (skipRemainingOugiCheck) {
+            s++;
+            sp_name = "secret.specialEffect." + ("000" + s).slice(-3);
+            continue;
+          }
           // 要素の確認
           const skillElement = document.getElementById(sp_name + ".skill");
           const nameElement = document.getElementById(sp_name + ".name");
@@ -851,11 +884,21 @@
             const effectValue = effectElement ? effectElement.value : "";
             const explainValue = explainElement ? explainElement.value : "";
 
+            if (nameValue.trim() === "以下、未使用" || effectValue.trim() === "以下、未使用" || explainValue.trim() === "以下、未使用") {
+              skipRemainingOugiCheck = true;
+              s++;
+              sp_name = "secret.specialEffect." + ("000" + s).slice(-3);
+              continue;
+            }
+
             const isOnlyOneOugi = !document.getElementById("secret.specialEffect.001");
             const isAllEmpty = nameValue.trim() === "" && skillValue.trim() === "" && effectValue.trim() === "" && explainValue.trim() === "";
 
+            const isSkipKeywords = nameValue.includes("非公開") || nameValue.includes("秘匿") || 
+                                   nameValue.includes("未使用") || nameValue.includes("今回は使わない") || nameValue.includes("不使用");
+
             // 指定された条件でチェックをスキップ
-            if ((isOnlyOneOugi && isAllEmpty) || nameValue.includes("非公開") || nameValue.includes("秘匿")) {
+            if ((isOnlyOneOugi && isAllEmpty) || isSkipKeywords) {
               // スキップ
             } else {
               const ogiMatch = textContents.some((element) =>
@@ -888,9 +931,15 @@
           '[id^="ninpou."][id$=".targetSkill"]'
         );
 
+        let skipRemainingNinpouCheck = false;
         for (const targetSkillElement of ninpouTargetSkillElements) {
           const baseId = targetSkillElement.id.replace(/\.targetSkill$/, ""); // IDから '.targetSkill' を除去
           const nameElement = document.getElementById(`${baseId}.name`); // 対応する .name 要素を取得
+
+          if (baseId === stopNinpoCheckBaseId) {
+            skipRemainingNinpouCheck = true;
+          }
+          if (skipRemainingNinpouCheck) continue;
 
           if (targetSkillElement) {
             const targetSkillValue = targetSkillElement.value;
