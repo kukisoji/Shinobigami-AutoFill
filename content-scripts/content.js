@@ -846,7 +846,6 @@
         }
 
         // 忍法の事前スキャン（「以下、未使用」による全スキップ判定）
-        let skipAllOugiCheck = false;
         let stopNinpoCheckBaseId = null;
         let ninpouNameElementsForCheck = document.querySelectorAll(
           '[id^="ninpou."][id$=".name"]'
@@ -858,12 +857,11 @@
           const effectValue = effectElement ? effectElement.value : "";
           if (info.trim() === "以下、未使用" || effectValue.trim() === "以下、未使用") {
              stopNinpoCheckBaseId = baseId;
-             skipAllOugiCheck = true;
              break;
           }
         }
 
-        let skipRemainingOugiCheck = skipAllOugiCheck;
+        let skipRemainingOugiCheck = false;
 
         //奥義チェック
         while (document.getElementById(sp_name)) {
