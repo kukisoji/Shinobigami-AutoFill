@@ -676,8 +676,8 @@
         `.input.skillcol.selected.selected > [id^="skills.row"][id*=".name"]`
       );
       const textContents = Array.from(selectedTokugi).map(
-        (selectedTokugi) => selectedTokugi.textContent
-      );
+        (selectedTokugi) => selectedTokugi.textContent.trim()
+      ).filter(text => text !== "");
 
       //流派名で配列検索
       const result = Ryuha_data.find((row) => row[0] === KaiRyuha);
@@ -838,7 +838,7 @@
         }
 
         //奥義チェック
-        while (document.getElementById(sp_name + ".name")) {
+        while (document.getElementById(sp_name)) {
           // .skill 要素と .name 要素の確認
           const skillElement = document.getElementById(sp_name + ".skill");
           const nameElement = document.getElementById(sp_name + ".name");
