@@ -839,16 +839,23 @@
 
         //奥義チェック
         while (document.getElementById(sp_name)) {
-          // .skill 要素と .name 要素の確認
+          // 要素の確認
           const skillElement = document.getElementById(sp_name + ".skill");
           const nameElement = document.getElementById(sp_name + ".name");
+          const effectElement = document.getElementById(sp_name + ".effect");
+          const explainElement = document.getElementById(sp_name + ".explain");
 
           if (skillElement) {
             const skillValue = skillElement.value;
             const nameValue = nameElement ? nameElement.value : "";
+            const effectValue = effectElement ? effectElement.value : "";
+            const explainValue = explainElement ? explainElement.value : "";
 
-            // 奥義名が空欄、もしくは「非公開」を含む場合はチェックをスキップする
-            if (nameValue === "" || nameValue.includes("非公開")) {
+            const isOnlyOneOugi = !document.getElementById("secret.specialEffect.001");
+            const isAllEmpty = nameValue.trim() === "" && skillValue.trim() === "" && effectValue.trim() === "" && explainValue.trim() === "";
+
+            // 指定された条件でチェックをスキップ
+            if ((isOnlyOneOugi && isAllEmpty) || nameValue.includes("非公開") || nameValue.includes("秘匿")) {
               // スキップ
             } else {
               const ogiMatch = textContents.some((element) =>
