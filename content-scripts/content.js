@@ -838,7 +838,7 @@
         }
 
         //奥義チェック
-        while (document.getElementById(sp_name)) {
+        while (document.getElementById(sp_name + ".name")) {
           // .skill 要素と .name 要素の確認
           const skillElement = document.getElementById(sp_name + ".skill");
           const nameElement = document.getElementById(sp_name + ".name");
@@ -847,8 +847,8 @@
             const skillValue = skillElement.value;
             const nameValue = nameElement ? nameElement.value : "";
 
-            // 奥義名が空欄、もしくは「非公開」「秘匿」を含む場合はチェックをスキップする
-            if (nameValue.trim() === "" || nameValue.includes("非公開") || nameValue.includes("秘匿")) {
+            // 奥義名が空欄、もしくは「非公開」を含む場合はチェックをスキップする
+            if (nameValue === "" || nameValue.includes("非公開")) {
               // スキップ
             } else {
               const ogiMatch = textContents.some((element) =>
