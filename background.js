@@ -1235,37 +1235,13 @@ var background = (function () {
   let ws;
   function getDevServerWebSocket() {
     if (ws == null) {
-      const serverUrl = `${"ws:"}//${"localhost"}:${3e3}`;
-      logger.debug("Connecting to dev server @", serverUrl);
-      ws = new WebSocket(serverUrl, "vite-hmr");
-      ws.addWxtEventListener = ws.addEventListener.bind(ws);
-      ws.sendCustom = (event, payload) =>
-        ws == null
-          ? void 0
-          : ws.send(JSON.stringify({ type: "custom", event, payload }));
-      ws.addEventListener("open", () => {
-        logger.debug("Connected to dev server");
-      });
-      ws.addEventListener("close", () => {
-        logger.debug("Disconnected from dev server");
-      });
-      ws.addEventListener("error", (event) => {
-        logger.error("Failed to connect to dev server", event);
-      });
-      ws.addEventListener("message", (e) => {
-        try {
-          const message = JSON.parse(e.data);
-          if (message.type === "custom") {
-            ws == null
-              ? void 0
-              : ws.dispatchEvent(
-                  new CustomEvent(message.event, { detail: message.data })
-                );
-          }
-        } catch (err) {
-          logger.error("Failed to handle message", err);
-        }
-      });
+      ws = {
+        addWxtEventListener: () => {},
+        sendCustom: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => true,
+      };
     }
     return ws;
   }

@@ -1034,6 +1034,7 @@
 
     switch (upperStyleValue) {
       case "a":
+      case "af":
         return RYUHA_CODE.HASHA;
       case "ab":
         return RYUHA_CODE.KURAMA;
