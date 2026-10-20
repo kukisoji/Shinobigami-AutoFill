@@ -5,6 +5,12 @@ document.addEventListener("DOMContentLoaded", function () {
   const searchBtn = document.getElementById("search-btn");
   const newActionBtn = document.getElementById("gaba-check");
 
+  // バージョン表示(不具合報告のときに確認しやすくする)
+  const versionElement = document.getElementById("version");
+  if (versionElement) {
+    versionElement.textContent = "ver " + ext.runtime.getManifest().version;
+  }
+
   async function injectContentScript(tabId) {
     // content.js側で二重実行を防いでいるので、何度注入しても問題ない
     // 先頭の「/」が無いと、Firefoxはpopup/からの相対パスとして探してしまう

@@ -55,7 +55,7 @@
         "background_data.json"
       ],
       "matches": [
-        "<all_urls>"
+        "https://character-sheets.appspot.com/*"
       ]
     }
   ]

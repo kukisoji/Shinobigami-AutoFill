@@ -78,3 +78,10 @@ h1 {
   color: #666;
   text-align: left;
 }
+
+
+.version {
+  margin: 4px 0 0;
+  font-size: 1rem;
+  color: #666;
+}

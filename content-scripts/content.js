@@ -3,13 +3,23 @@
   window.__SHINOBIGAMI_AUTOFILL_INJECTED = true;
 
   // ユーザー報告用グローバルハンドラー
+  // Firefoxではキャラシサイト自身のエラーもここに届くため、
+  // 拡張機能のファイル(chrome-extension://〜 や moz-extension://〜)で起きたエラーだけ警告する
+  const EXTENSION_BASE_URL = chrome.runtime.getURL("");
+  // (Firefoxでは拡張機能自身のエラーはこの2つに届かないので、ボタンから呼ぶ処理はdebounce側でもエラーを受け止めている)
+  function reportError(message) {
+    alert("【忍神AutoFill】エラーが発生しました。開発者に報告してください。\n詳細: " + message);
+  }
   window.addEventListener("error", function (event) {
-    if (event.filename && event.filename.includes("content.js")) {
-      alert("【忍神AutoFill】致命的なエラーが発生しました。開発者に報告してください。\n詳細: " + event.message);
+    if (event.filename && event.filename.startsWith(EXTENSION_BASE_URL)) {
+      reportError(event.message);
     }
   });
   window.addEventListener("unhandledrejection", function (event) {
-    alert("【忍神AutoFill】非同期処理でエラーが発生しました。開発者に報告してください。\n詳細: " + (event.reason ? event.reason.message || event.reason : "Unknown error"));
+    const reason = event.reason;
+    const stack = reason && typeof reason.stack === "string" ? reason.stack : "";
+    if (!stack.includes(EXTENSION_BASE_URL)) return;
+    reportError(reason.message || reason);
   });
 
   // 定数定義
@@ -77,7 +87,13 @@
     return function (...args) {
       if (timeout) clearTimeout(timeout);
       timeout = setTimeout(() => {
-        func(...args);
+        // 同期・非同期どちらのエラーもここで受け止めて警告する
+        Promise.resolve()
+          .then(() => func(...args))
+          .catch((error) => {
+            console.error(error);
+            reportError(error && error.message ? error.message : error);
+          });
       }, 300);
     };
   }
