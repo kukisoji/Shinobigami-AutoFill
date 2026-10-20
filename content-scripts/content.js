@@ -678,31 +678,64 @@
     fillBackgrounds(backgroundData);
   }
 
+  //背景データ(background_data.json)を名前で引けるようにする
+  //1つの背景は {"名称", "種別", "功績点", "参照", "取得可能流派"(省略可), "流派別功績点"(省略可)} の形
+  function createBackgroundMap(backgroundData) {
+    const map = new Map();
+    if (!Array.isArray(backgroundData)) return map;
+    for (const row of backgroundData) {
+      if (!row || typeof row["名称"] !== "string") continue;
+      map.set(row["名称"].replace(/\s/g, ""), row);
+    }
+    return map;
+  }
+
+  //名前から空白を除いて探し、見つからなければ括弧書き（「流派の血（鞍馬神流）」の鞍馬神流など）を外して探す
+  function findBackground(backgroundMap, name) {
+    const trimmed = name.replace(/\s/g, "");
+    if (backgroundMap.has(trimmed)) return [trimmed, backgroundMap.get(trimmed)];
+    const base = trimmed.replace(/[（(【].*?[）)】]/g, "");
+    if (backgroundMap.has(base)) return [base, backgroundMap.get(base)];
+    return [trimmed, undefined];
+  }
+
+  //PCの流派名を [下位流派, 上位流派] の順で返す(未記入のものは入れない)
+  function getPcRyuhaNames() {
+    const names = [];
+    let sub = (document.getElementById("base.substyle")?.value || "").trim();
+    if (sub === "特教委") sub = "特命臨時教職員派遣委員会";
+    if (sub && sub !== "上位流派") names.push(sub);
+    const upperSelect = document.getElementById("base.upperstyle");
+    const upper = upperSelect?.selectedOptions?.[0]?.text?.trim() || "";
+    if (upper && !names.includes(upper)) names.push(upper);
+    return names;
+  }
+
+  //流派別の功績点があればそれを、なければ通常の功績点を返す(下位流派の指定を上位流派より優先)
+  function getBackgroundPoint(row, ryuhaNames) {
+    const byRyuha = row["流派別功績点"];
+    if (byRyuha && typeof byRyuha === "object") {
+      for (const ryuha of ryuhaNames) {
+        if (byRyuha[ryuha] !== undefined) return byRyuha[ryuha];
+      }
+    }
+    return row["功績点"];
+  }
+
+  //取得可能流派の指定があり、PCの流派がどれにも当てはまらなければfalse
+  function canTakeBackground(row, ryuhaNames) {
+    const allowed = row["取得可能流派"];
+    if (!Array.isArray(allowed) || allowed.length === 0) return true;
+    return ryuhaNames.some((ryuha) => allowed.includes(ryuha));
+  }
+
   //背景欄の自動入力
   //種別・功績点・参照ページはbackground_data.jsonから入れる。
   //効果は著作権に配慮して同梱せず、忍法効果と同じく「ユーザーが入力した分を保存して次回から入力」にする
+  //取得できない流派でも入力はして、ガバチェックで警告する
   function fillBackgrounds(backgroundData) {
-    //background_data.jsonの列番号
-    const bg_col = {
-      name: 0,
-      type: 1,
-      point: 2,
-      page: 3,
-    };
-
-    const backgroundDataMap = new Map();
-    if (Array.isArray(backgroundData)) {
-      backgroundData.forEach((row) => backgroundDataMap.set(row[bg_col.name], row));
-    }
-
-    //名前から空白を除いて探し、見つからなければ括弧書き（「流派の血（鞍馬神流）」の鞍馬神流など）を外して探す
-    const findBackground = (name) => {
-      const trimmed = name.replace(/\s/g, "");
-      if (backgroundDataMap.has(trimmed)) return [trimmed, backgroundDataMap.get(trimmed)];
-      const base = trimmed.replace(/[（(【].*?[）)】]/g, "");
-      if (backgroundDataMap.has(base)) return [base, backgroundDataMap.get(base)];
-      return [trimmed, undefined];
-    };
+    const backgroundMap = createBackgroundMap(backgroundData);
+    const ryuhaNames = getPcRyuhaNames();
 
     //値を入れてchangeイベントを発火(ページ側の表示更新用)
     const setValue = (element, value) => {
@@ -728,15 +761,15 @@
       if (name.trim() === "以下、未使用" || effectValue.trim() === "以下、未使用") break;
       if (name.trim() === "") continue;
 
-      const [lookupName, result] = findBackground(name);
+      const [lookupName, result] = findBackground(backgroundMap, name);
 
       //データにある背景だけ入力し、無い背景はユーザーの入力をそのまま残す
       if (result) {
-        if (typeElement && [...typeElement.options].some((o) => o.value === result[bg_col.type])) {
-          setValue(typeElement, result[bg_col.type]);
+        if (typeElement && [...typeElement.options].some((o) => o.value === result["種別"])) {
+          setValue(typeElement, result["種別"]);
         }
-        setValue(pointElement, result[bg_col.point]);
-        setValue(pageElement, result[bg_col.page]);
+        setValue(pointElement, getBackgroundPoint(result, ryuhaNames));
+        setValue(pageElement, result["参照"]);
       } else {
         console.warn(`背景が見つかりませんでした: ${lookupName}`);
       }
@@ -760,6 +793,27 @@
         });
       }
     }
+  }
+
+  //ガバチェック用：取得できない流派の背景を探してメッセージを返す
+  function checkBackgroundRyuha(backgroundData) {
+    const backgroundMap = createBackgroundMap(backgroundData);
+    const ryuhaNames = getPcRyuhaNames();
+    let message = "";
+    const backgroundNameElements = document.querySelectorAll(
+      '[id^="background."][id$=".name"]'
+    );
+    for (const nameElement of backgroundNameElements) {
+      const name = nameElement.value || "";
+      if (name.trim() === "以下、未使用") break;
+      if (name.trim() === "") continue;
+      const [, result] = findBackground(backgroundMap, name);
+      if (result && !canTakeBackground(result, ryuhaNames)) {
+        message +=
+          `背景「${name.trim()}」は${result["取得可能流派"].join("・")}の忍者しか取得できません。\n`;
+      }
+    }
+    return message;
   }
 
   //ガバチェック
@@ -1066,6 +1120,14 @@
           console.log("忍法チェックヨシ！：", baseId);
         }
         console.log("忍法チェック終わり！");
+
+        //背景の取得可能流派チェック
+        const backgroundData = await loadFile("background_data.json");
+        const backgroundErrMsg = checkBackgroundRyuha(backgroundData);
+        if (backgroundErrMsg) {
+          GabaFlag = true;
+          ErrMsg += backgroundErrMsg;
+        }
 
         //結果発表～！
         if (GabaFlag) {
