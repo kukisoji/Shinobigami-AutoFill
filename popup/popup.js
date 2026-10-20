@@ -7,9 +7,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
   async function injectContentScript(tabId) {
     // content.js側で二重実行を防いでいるので、何度注入しても問題ない
+    // 先頭の「/」が無いと、Firefoxはpopup/からの相対パスとして探してしまう
     await ext.scripting.executeScript({
       target: { tabId: tabId },
-      files: ["content-scripts/content.js"],
+      files: ["/content-scripts/content.js"],
     });
   }
 
@@ -23,8 +24,8 @@ document.addEventListener("DOMContentLoaded", function () {
     try {
       await injectContentScript(tab.id);
     } catch (error) {
+      // 対象ページでは自動で読み込まれているので、失敗してもメッセージは送ってみる
       console.error("スクリプトのインジェクトにエラー:", error);
-      return;
     }
 
     try {
