@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>移行データインポート - 半自動忍法概要埋め立て機</title>
+  <link href="import.css" rel="stylesheet" type="text/css" media="all">
+</head>
+<body>
+  <main>
+    <h1>移行データインポート</h1>
+    <p>「移行データエクスポート」で書き出したファイルを選ぶと、保存していた忍法・背景の効果をこのブラウザに読み込みます。</p>
+    <p class="note">同じ名前の効果がすでに保存されている場合は、ファイルの内容で上書きされます。</p>
+    <input type="file" id="import-file" accept=".json,application/json">
+    <p id="import-status" class="status"></p>
+  </main>
+  <script src="import.js"></script>
+</body>
+</html>

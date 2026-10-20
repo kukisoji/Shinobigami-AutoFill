@@ -80,8 +80,35 @@ h1 {
 }
 
 
-.version {
-  margin: 4px 0 0;
+/* 移行データ(保存した効果)の書き出し・読み込み */
+.transfer {
+  margin-top: 6px;
+}
+
+.transfer-btn {
+  display: block;
+  width: 150px;
+  margin: 3px auto;
+  padding: 3px 0;
+  font-size: 1.1rem;
+  color: #444;
+  background: #f2f2f2;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.transfer-btn:hover {
+  background: #e6e6e6;
+}
+
+.transfer-status {
+  margin: 2px 0 0;
+  min-height: 0;
   font-size: 1rem;
-  color: #666;
+  color: #b84c00;
+}
+
+.transfer-status:empty {
+  display: none;
 }
