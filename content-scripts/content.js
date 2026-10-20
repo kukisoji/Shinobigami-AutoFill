@@ -930,6 +930,12 @@
       //流派名で配列検索
       const result = Ryuha_data.find((row) => row[0] === KaiRyuha);
 
+      //一覧にない下位流派(独自流派など)は、流派関連のチェックだけ省略して残りのチェックを続ける
+      const isUnknownRyuha = !result;
+      const unknownRyuhaNote = isUnknownRyuha
+        ? `※下位流派「${KaiRyuha}」は一覧にないため、独自流派として流派関連のチェック(上位流派・得意分野・所属条件)を省略しました。\n`
+        : "";
+
       if (result) {
         //流派に合わせて上位流派を変更
         if (result[5] && result[5] !== undefined) {
@@ -1084,138 +1090,134 @@
             }
           }
         }
+      } //流派関連のチェックここまで
 
-        // 忍法の事前スキャン（「以下、未使用」による全スキップ判定）
-        let stopNinpoCheckBaseId = null;
-        let ninpouNameElementsForCheck = document.querySelectorAll(
-          '[id^="ninpou."][id$=".name"]'
-        );
-        for (const targetElement of ninpouNameElementsForCheck) {
-          const info = targetElement.value || targetElement.textContent;
-          const baseId = targetElement.id.replace(/\.name$/, "");
-          const effectElement = document.getElementById(`${baseId}.effect`);
-          const effectValue = effectElement ? effectElement.value : "";
-          if (info.trim() === "以下、未使用" || effectValue.trim() === "以下、未使用") {
-             stopNinpoCheckBaseId = baseId;
-             break;
-          }
+      // 忍法の事前スキャン（「以下、未使用」による全スキップ判定）
+      let stopNinpoCheckBaseId = null;
+      let ninpouNameElementsForCheck = document.querySelectorAll(
+        '[id^="ninpou."][id$=".name"]'
+      );
+      for (const targetElement of ninpouNameElementsForCheck) {
+        const info = targetElement.value || targetElement.textContent;
+        const baseId = targetElement.id.replace(/\.name$/, "");
+        const effectElement = document.getElementById(`${baseId}.effect`);
+        const effectValue = effectElement ? effectElement.value : "";
+        if (info.trim() === "以下、未使用" || effectValue.trim() === "以下、未使用") {
+           stopNinpoCheckBaseId = baseId;
+           break;
         }
+      }
 
-        let skipRemainingOugiCheck = false;
+      let skipRemainingOugiCheck = false;
 
-        //奥義チェック
-        while (document.getElementById(sp_name)) {
-          if (skipRemainingOugiCheck) {
+      //奥義チェック
+      while (document.getElementById(sp_name)) {
+        if (skipRemainingOugiCheck) {
+          s++;
+          sp_name = "secret.specialEffect." + ("000" + s).slice(-3);
+          continue;
+        }
+        // 要素の確認
+        const skillElement = document.getElementById(sp_name + ".skill");
+        const nameElement = document.getElementById(sp_name + ".name");
+        const effectElement = document.getElementById(sp_name + ".effect");
+        const explainElement = document.getElementById(sp_name + ".explain");
+
+        if (skillElement) {
+          const skillValue = skillElement.value;
+          const nameValue = nameElement ? nameElement.value : "";
+          const effectValue = effectElement ? effectElement.value : "";
+          const explainValue = explainElement ? explainElement.value : "";
+
+          if (nameValue.trim() === "以下、未使用" || effectValue.trim() === "以下、未使用" || explainValue.trim() === "以下、未使用") {
+            skipRemainingOugiCheck = true;
             s++;
             sp_name = "secret.specialEffect." + ("000" + s).slice(-3);
             continue;
           }
-          // 要素の確認
-          const skillElement = document.getElementById(sp_name + ".skill");
-          const nameElement = document.getElementById(sp_name + ".name");
-          const effectElement = document.getElementById(sp_name + ".effect");
-          const explainElement = document.getElementById(sp_name + ".explain");
 
-          if (skillElement) {
-            const skillValue = skillElement.value;
-            const nameValue = nameElement ? nameElement.value : "";
-            const effectValue = effectElement ? effectElement.value : "";
-            const explainValue = explainElement ? explainElement.value : "";
+          const isOnlyOneOugi = !document.getElementById("secret.specialEffect.001");
+          const isAllEmpty = nameValue.trim() === "" && skillValue.trim() === "" && effectValue.trim() === "" && explainValue.trim() === "";
 
-            if (nameValue.trim() === "以下、未使用" || effectValue.trim() === "以下、未使用" || explainValue.trim() === "以下、未使用") {
-              skipRemainingOugiCheck = true;
-              s++;
-              sp_name = "secret.specialEffect." + ("000" + s).slice(-3);
-              continue;
-            }
+          const isSkipKeywords = nameValue.includes("非公開") || nameValue.includes("秘匿") || 
+                                 nameValue.includes("未使用") || nameValue.includes("今回は使わない") || nameValue.includes("不使用");
 
-            const isOnlyOneOugi = !document.getElementById("secret.specialEffect.001");
-            const isAllEmpty = nameValue.trim() === "" && skillValue.trim() === "" && effectValue.trim() === "" && explainValue.trim() === "";
+          // 指定された条件でチェックをスキップ
+          if ((isOnlyOneOugi && isAllEmpty) || isSkipKeywords) {
+            // スキップ
+          } else {
+            const ogiMatch = textContents.some((element) =>
+              skillValue.includes(element)
+            );
 
-            const isSkipKeywords = nameValue.includes("非公開") || nameValue.includes("秘匿") || 
-                                   nameValue.includes("未使用") || nameValue.includes("今回は使わない") || nameValue.includes("不使用");
-
-            // 指定された条件でチェックをスキップ
-            if ((isOnlyOneOugi && isAllEmpty) || isSkipKeywords) {
-              // スキップ
-            } else {
-              const ogiMatch = textContents.some((element) =>
-                skillValue.includes(element)
-              );
-
-              if (skillValue === "") {
-                GabaFlag = true;
-                ErrMsg +=
-                  String(s + 1) + "番目の奥義の指定特技が記入されていません。\n";
-              } else if (!ogiMatch) {
-                GabaFlag = true;
-                ErrMsg +=
-                  String(s + 1) +
-                  "番目の奥義の指定特技として指定されている" +
-                  skillValue +
-                  "を修得していません。\n";
-              }
-            }
-          }
-
-          console.log("奥義チェックヨシ！：", sp_name);
-          s++;
-          sp_name = "secret.specialEffect." + ("000" + s).slice(-3);
-        }
-        console.log("奥義チェック終わり！");
-
-        //忍法の特技チェック
-        const ninpouTargetSkillElements = document.querySelectorAll(
-          '[id^="ninpou."][id$=".targetSkill"]'
-        );
-
-        let skipRemainingNinpouCheck = false;
-        for (const targetSkillElement of ninpouTargetSkillElements) {
-          const baseId = targetSkillElement.id.replace(/\.targetSkill$/, ""); // IDから '.targetSkill' を除去
-          const nameElement = document.getElementById(`${baseId}.name`); // 対応する .name 要素を取得
-
-          if (baseId === stopNinpoCheckBaseId) {
-            skipRemainingNinpouCheck = true;
-          }
-          if (skipRemainingNinpouCheck) continue;
-
-          if (targetSkillElement) {
-            const targetSkillValue = targetSkillElement.value;
-            const nameValue = nameElement ? nameElement.value : "";
-            if (
-              targetSkillValue === "" ||
-              targetSkillValue === "自由" ||
-              targetSkillValue.includes("好きな")
-            ) {
+            if (skillValue === "") {
               GabaFlag = true;
               ErrMsg +=
-                (nameValue || `忍法(${baseId})`) + // .name 要素があればその値、なければIDで表示
-                "の指定特技がありません。\n";
+                String(s + 1) + "番目の奥義の指定特技が記入されていません。\n";
+            } else if (!ogiMatch) {
+              GabaFlag = true;
+              ErrMsg +=
+                String(s + 1) +
+                "番目の奥義の指定特技として指定されている" +
+                skillValue +
+                "を修得していません。\n";
             }
           }
-          console.log("忍法チェックヨシ！：", baseId);
-        }
-        console.log("忍法チェック終わり！");
-
-        //背景の取得条件チェック
-        const backgroundData = await loadFile("background_data.json");
-        const knownSubRyuha = Array.isArray(Ryuha_data) ? Ryuha_data.map((row) => row[0]) : [];
-        const backgroundErrMsg = checkBackgroundRestrictions(backgroundData, knownSubRyuha);
-        if (backgroundErrMsg) {
-          GabaFlag = true;
-          ErrMsg += backgroundErrMsg;
         }
 
-        //結果発表～！
-        if (GabaFlag) {
-          alert(ErrMsg);
-        } else {
-          alert("特に問題はないようです。\n");
+        console.log("奥義チェックヨシ！：", sp_name);
+        s++;
+        sp_name = "secret.specialEffect." + ("000" + s).slice(-3);
+      }
+      console.log("奥義チェック終わり！");
+
+      //忍法の特技チェック
+      const ninpouTargetSkillElements = document.querySelectorAll(
+        '[id^="ninpou."][id$=".targetSkill"]'
+      );
+
+      let skipRemainingNinpouCheck = false;
+      for (const targetSkillElement of ninpouTargetSkillElements) {
+        const baseId = targetSkillElement.id.replace(/\.targetSkill$/, ""); // IDから '.targetSkill' を除去
+        const nameElement = document.getElementById(`${baseId}.name`); // 対応する .name 要素を取得
+
+        if (baseId === stopNinpoCheckBaseId) {
+          skipRemainingNinpouCheck = true;
         }
+        if (skipRemainingNinpouCheck) continue;
+
+        if (targetSkillElement) {
+          const targetSkillValue = targetSkillElement.value;
+          const nameValue = nameElement ? nameElement.value : "";
+          if (
+            targetSkillValue === "" ||
+            targetSkillValue === "自由" ||
+            targetSkillValue.includes("好きな")
+          ) {
+            GabaFlag = true;
+            ErrMsg +=
+              (nameValue || `忍法(${baseId})`) + // .name 要素があればその値、なければIDで表示
+              "の指定特技がありません。\n";
+          }
+        }
+        console.log("忍法チェックヨシ！：", baseId);
+      }
+      console.log("忍法チェック終わり！");
+
+      //背景の取得条件チェック
+      const backgroundData = await loadFile("background_data.json");
+      const knownSubRyuha = Array.isArray(Ryuha_data) ? Ryuha_data.map((row) => row[0]) : [];
+      const backgroundErrMsg = checkBackgroundRestrictions(backgroundData, knownSubRyuha);
+      if (backgroundErrMsg) {
+        GabaFlag = true;
+        ErrMsg += backgroundErrMsg;
+      }
+
+      //結果発表～！
+      if (GabaFlag) {
+        alert(ErrMsg + unknownRyuhaNote);
       } else {
-        alert(
-          "流派が見つかりませんでした。この拡張機能では独自流派のチェックは出来ません。"
-        );
+        alert("特に問題はないようです。\n" + unknownRyuhaNote);
       }
     }
   }
