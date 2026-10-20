@@ -699,34 +699,66 @@
     return [trimmed, undefined];
   }
 
-  //PCの流派名を [下位流派, 上位流派] の順で返す(未記入のものは入れない)
-  function getPcRyuhaNames() {
-    const names = [];
+  //PCの流派を返す。names は [下位流派, 上位流派] の順(未記入のものは入れない)
+  function getPcRyuha() {
     let sub = (document.getElementById("base.substyle")?.value || "").trim();
     if (sub === "特教委") sub = "特命臨時教職員派遣委員会";
-    if (sub && sub !== "上位流派") names.push(sub);
+    if (sub === "上位流派") sub = "";
     const upperSelect = document.getElementById("base.upperstyle");
     const upper = upperSelect?.selectedOptions?.[0]?.text?.trim() || "";
+    const names = [];
+    if (sub) names.push(sub);
     if (upper && !names.includes(upper)) names.push(upper);
-    return names;
+    return { sub, upper, names };
+  }
+
+  //背景データの流派指定がPCに当てはまるか
+  //「○○」はその流派と下位流派、「○○（下位流派を除く）」は上位流派そのもののPCだけ
+  const EXCLUDE_SUB_SUFFIX = "（下位流派を除く）";
+  function matchesRyuha(key, pc) {
+    if (key.endsWith(EXCLUDE_SUB_SUFFIX)) {
+      return !pc.sub && pc.upper === key.slice(0, -EXCLUDE_SUB_SUFFIX.length);
+    }
+    return pc.names.includes(key);
   }
 
   //流派別の功績点があればそれを、なければ通常の功績点を返す(下位流派の指定を上位流派より優先)
-  function getBackgroundPoint(row, ryuhaNames) {
+  function getBackgroundPoint(row, pc) {
     const byRyuha = row["流派別功績点"];
     if (byRyuha && typeof byRyuha === "object") {
-      for (const ryuha of ryuhaNames) {
-        if (byRyuha[ryuha] !== undefined) return byRyuha[ryuha];
-      }
+      const keys = Object.keys(byRyuha).filter((key) => matchesRyuha(key, pc));
+      const subKey = keys.find((key) => key === pc.sub);
+      if (subKey) return byRyuha[subKey];
+      if (keys.length > 0) return byRyuha[keys[0]];
     }
     return row["功績点"];
   }
 
-  //取得可能流派の指定があり、PCの流派がどれにも当てはまらなければfalse
-  function canTakeBackground(row, ryuhaNames) {
+  //キャラシのレギュレーション欄から「現代」「退魔」「戦国」などを判定(未記入は現代編扱い)
+  function getPcRegulation() {
+    const text = document.getElementById("base.regulation")?.value || "";
+    for (const keyword of ["退魔", "戦国", "平安"]) {
+      if (text.includes(keyword)) return keyword;
+    }
+    return "現代";
+  }
+
+  //取得条件に合わない理由を返す(合っていれば空の配列)
+  function getBackgroundRestrictionErrors(row, pc, regulation) {
+    const errors = [];
     const allowed = row["取得可能流派"];
-    if (!Array.isArray(allowed) || allowed.length === 0) return true;
-    return ryuhaNames.some((ryuha) => allowed.includes(ryuha));
+    if (Array.isArray(allowed) && allowed.length > 0 && !allowed.some((key) => matchesRyuha(key, pc))) {
+      errors.push(`${allowed.join("・")}の忍者しか取得できません。`);
+    }
+    const denied = row["取得不可流派"];
+    if (Array.isArray(denied) && denied.some((key) => matchesRyuha(key, pc))) {
+      errors.push(`${denied.join("・")}の忍者は取得できません。`);
+    }
+    const regulations = row["取得可能レギュレーション"];
+    if (Array.isArray(regulations) && regulations.length > 0 && !regulations.includes(regulation)) {
+      errors.push(`${regulations.map((r) => r + "編").join("・")}のキャラクターしか取得できません。`);
+    }
+    return errors;
   }
 
   //背景欄の自動入力
@@ -735,7 +767,7 @@
   //取得できない流派でも入力はして、ガバチェックで警告する
   function fillBackgrounds(backgroundData) {
     const backgroundMap = createBackgroundMap(backgroundData);
-    const ryuhaNames = getPcRyuhaNames();
+    const pc = getPcRyuha();
 
     //値を入れてchangeイベントを発火(ページ側の表示更新用)
     const setValue = (element, value) => {
@@ -768,7 +800,7 @@
         if (typeElement && [...typeElement.options].some((o) => o.value === result["種別"])) {
           setValue(typeElement, result["種別"]);
         }
-        setValue(pointElement, getBackgroundPoint(result, ryuhaNames));
+        setValue(pointElement, getBackgroundPoint(result, pc));
         setValue(pageElement, result["参照"]);
       } else {
         console.warn(`背景が見つかりませんでした: ${lookupName}`);
@@ -795,10 +827,11 @@
     }
   }
 
-  //ガバチェック用：取得できない流派の背景を探してメッセージを返す
-  function checkBackgroundRyuha(backgroundData) {
+  //ガバチェック用：取得条件(流派・レギュレーション)に合わない背景を探してメッセージを返す
+  function checkBackgroundRestrictions(backgroundData) {
     const backgroundMap = createBackgroundMap(backgroundData);
-    const ryuhaNames = getPcRyuhaNames();
+    const pc = getPcRyuha();
+    const regulation = getPcRegulation();
     let message = "";
     const backgroundNameElements = document.querySelectorAll(
       '[id^="background."][id$=".name"]'
@@ -808,9 +841,9 @@
       if (name.trim() === "以下、未使用") break;
       if (name.trim() === "") continue;
       const [, result] = findBackground(backgroundMap, name);
-      if (result && !canTakeBackground(result, ryuhaNames)) {
-        message +=
-          `背景「${name.trim()}」は${result["取得可能流派"].join("・")}の忍者しか取得できません。\n`;
+      if (!result) continue;
+      for (const error of getBackgroundRestrictionErrors(result, pc, regulation)) {
+        message += `背景「${name.trim()}」は${error}\n`;
       }
     }
     return message;
@@ -1121,9 +1154,9 @@
         }
         console.log("忍法チェック終わり！");
 
-        //背景の取得可能流派チェック
+        //背景の取得条件チェック
         const backgroundData = await loadFile("background_data.json");
-        const backgroundErrMsg = checkBackgroundRyuha(backgroundData);
+        const backgroundErrMsg = checkBackgroundRestrictions(backgroundData);
         if (backgroundErrMsg) {
           GabaFlag = true;
           ErrMsg += backgroundErrMsg;
