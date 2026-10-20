@@ -696,6 +696,9 @@
     if (backgroundMap.has(trimmed)) return [trimmed, backgroundMap.get(trimmed)];
     const base = trimmed.replace(/[（(【].*?[）)】]/g, "");
     if (backgroundMap.has(base)) return [base, backgroundMap.get(base)];
+    //「●●部」は好きな部活名を付ける背景なので、「部」で終わる名前はこれとして扱う(「色部」は上で一致する)
+    //効果の保存名は部活ごとに分けるため、元の名前を返す
+    if (base.endsWith("部") && backgroundMap.has("●●部")) return [base, backgroundMap.get("●●部")];
     return [trimmed, undefined];
   }
 
@@ -703,7 +706,7 @@
   function getPcRyuha() {
     let sub = (document.getElementById("base.substyle")?.value || "").trim();
     if (sub === "特教委") sub = "特命臨時教職員派遣委員会";
-    if (sub === "上位流派") sub = "";
+    if (sub === "上位流派" || sub === "上位") sub = "";
     const upperSelect = document.getElementById("base.upperstyle");
     const upper = upperSelect?.selectedOptions?.[0]?.text?.trim() || "";
     const names = [];
@@ -722,16 +725,38 @@
     return pc.names.includes(key);
   }
 
+  //背景欄に書かれている背景名の一覧(「以下、未使用」より前)
+  function getPcBackgroundNames() {
+    const names = [];
+    for (const element of document.querySelectorAll('[id^="background."][id$=".name"]')) {
+      const name = (element.value || "").trim();
+      if (name === "以下、未使用") break;
+      if (name) names.push(name);
+    }
+    return names;
+  }
+
+  //背景データの「特殊条件」を持っているか
+  function hasSpecialCondition(row, condition) {
+    return Array.isArray(row["特殊条件"]) && row["特殊条件"].includes(condition);
+  }
+
   //流派別の功績点があればそれを、なければ通常の功績点を返す(下位流派の指定を上位流派より優先)
-  function getBackgroundPoint(row, pc) {
+  //委員会の背景は、委員会の背景をN個持っていると必要功績点が N-1 点上がる
+  function getBackgroundPoint(row, pc, backgroundNames) {
+    let point = row["功績点"];
     const byRyuha = row["流派別功績点"];
     if (byRyuha && typeof byRyuha === "object") {
       const keys = Object.keys(byRyuha).filter((key) => matchesRyuha(key, pc));
       const subKey = keys.find((key) => key === pc.sub);
-      if (subKey) return byRyuha[subKey];
-      if (keys.length > 0) return byRyuha[keys[0]];
+      if (subKey) point = byRyuha[subKey];
+      else if (keys.length > 0) point = byRyuha[keys[0]];
     }
-    return row["功績点"];
+    if (hasSpecialCondition(row, "委員会") && /^\d+$/.test(String(point))) {
+      const committeeCount = backgroundNames.filter((name) => name.includes("委員会")).length;
+      point = String(Number(point) + Math.max(committeeCount - 1, 0));
+    }
+    return point;
   }
 
   //キャラシのレギュレーション欄から「現代」「退魔」「戦国」などを判定(未記入は現代編扱い)
@@ -744,8 +769,24 @@
   }
 
   //取得条件に合わない理由を返す(合っていれば空の配列)
-  function getBackgroundRestrictionErrors(row, pc, regulation) {
+  //knownSubRyuha は既存の下位流派名の一覧(独自流派の判定用)
+  function getBackgroundRestrictionErrors(row, pc, regulation, backgroundNames, knownSubRyuha) {
     const errors = [];
+    //惟神修得可能者：比良坂機関(下位流派含む)か、「加持祈祷」を持っていればOK
+    if (
+      hasSpecialCondition(row, "惟神修得可能者") &&
+      pc.upper !== "比良坂機関" &&
+      !backgroundNames.some((name) => name.replace(/\s/g, "") === "加持祈祷")
+    ) {
+      errors.push("比良坂機関の忍者か、「加持祈祷」を修得しているキャラクターしか取得できません。");
+    }
+    //独自流派：ハグレモノの下位流派として、既存のものではない流派名が書かれていればOK
+    if (
+      hasSpecialCondition(row, "独自流派") &&
+      !(pc.upper === "ハグレモノ" && pc.sub && !knownSubRyuha.includes(pc.sub))
+    ) {
+      errors.push("独自流派(ハグレモノの下位流派)のキャラクターしか取得できません。");
+    }
     const allowed = row["取得可能流派"];
     if (Array.isArray(allowed) && allowed.length > 0 && !allowed.some((key) => matchesRyuha(key, pc))) {
       errors.push(`${allowed.join("・")}の忍者しか取得できません。`);
@@ -768,6 +809,7 @@
   function fillBackgrounds(backgroundData) {
     const backgroundMap = createBackgroundMap(backgroundData);
     const pc = getPcRyuha();
+    const backgroundNames = getPcBackgroundNames();
 
     //値を入れてchangeイベントを発火(ページ側の表示更新用)
     const setValue = (element, value) => {
@@ -800,7 +842,7 @@
         if (typeElement && [...typeElement.options].some((o) => o.value === result["種別"])) {
           setValue(typeElement, result["種別"]);
         }
-        setValue(pointElement, getBackgroundPoint(result, pc));
+        setValue(pointElement, getBackgroundPoint(result, pc, backgroundNames));
         setValue(pageElement, result["参照"]);
       } else {
         console.warn(`背景が見つかりませんでした: ${lookupName}`);
@@ -828,10 +870,11 @@
   }
 
   //ガバチェック用：取得条件(流派・レギュレーション)に合わない背景を探してメッセージを返す
-  function checkBackgroundRestrictions(backgroundData) {
+  function checkBackgroundRestrictions(backgroundData, knownSubRyuha) {
     const backgroundMap = createBackgroundMap(backgroundData);
     const pc = getPcRyuha();
     const regulation = getPcRegulation();
+    const backgroundNames = getPcBackgroundNames();
     let message = "";
     const backgroundNameElements = document.querySelectorAll(
       '[id^="background."][id$=".name"]'
@@ -842,7 +885,7 @@
       if (name.trim() === "") continue;
       const [, result] = findBackground(backgroundMap, name);
       if (!result) continue;
-      for (const error of getBackgroundRestrictionErrors(result, pc, regulation)) {
+      for (const error of getBackgroundRestrictionErrors(result, pc, regulation, backgroundNames, knownSubRyuha)) {
         message += `背景「${name.trim()}」は${error}\n`;
       }
     }
@@ -1156,7 +1199,8 @@
 
         //背景の取得条件チェック
         const backgroundData = await loadFile("background_data.json");
-        const backgroundErrMsg = checkBackgroundRestrictions(backgroundData);
+        const knownSubRyuha = Array.isArray(Ryuha_data) ? Ryuha_data.map((row) => row[0]) : [];
+        const backgroundErrMsg = checkBackgroundRestrictions(backgroundData, knownSubRyuha);
         if (backgroundErrMsg) {
           GabaFlag = true;
           ErrMsg += backgroundErrMsg;
