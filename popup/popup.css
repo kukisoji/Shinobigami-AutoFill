@@ -1,6 +1,5 @@
 body {
     width: 200px;
-    height: 75px;
     font-family: Arial, sans-serif;
     text-align: center;
     writing-mode: horizontal-tb;
@@ -64,4 +63,52 @@ html {
   margin-top: 6px;
   background: #35f500;
   border-bottom: 2px solid #5cb800;
+}
+
+h1 {
+  font-size: 1.6rem;
+  margin: 4px 0 6px;
+}
+
+/* 権利表示(TRPGライツ事務局の二次創作ガイドラインに基づく) */
+.rights {
+  margin: 6px 0 0;
+  font-size: 1rem;
+  line-height: 1.4;
+  color: #666;
+  text-align: left;
+}
+
+
+/* 移行データ(保存した効果)の書き出し・読み込み */
+.transfer {
+  margin-top: 6px;
+}
+
+.transfer-btn {
+  display: block;
+  width: 150px;
+  margin: 3px auto;
+  padding: 3px 0;
+  font-size: 1.1rem;
+  color: #444;
+  background: #f2f2f2;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.transfer-btn:hover {
+  background: #e6e6e6;
+}
+
+.transfer-status {
+  margin: 2px 0 0;
+  min-height: 0;
+  font-size: 1rem;
+  color: #b84c00;
+}
+
+.transfer-status:empty {
+  display: none;
 }

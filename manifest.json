@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "半自動忍法概要埋め立て機",
   "description": "シノビガミのキャラシートを作成する際に、忍法欄を埋めたり、不備がないかチェックが出来ます。",
-  "version": "2.2.8",
+  "version": "2.3.0",
   "icons": {
     "16": "icon/16.png",
     "32": "icon/32.png",
@@ -10,19 +10,19 @@
     "96": "icon/96.png",
     "128": "icon/128.png"
   },
-  "commands": {
-    "wxt:reload-extension": {
-      "description": "Reload the extension during development",
-      "suggested_key": {
-        "default": "Alt+R"
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "shinobigami-autofill@kukisoji",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
       }
     }
   },
-  "background": {
-    "service_worker": "background.js"
-  },
   "action": {
-    "default_title": "Default Popup Title",
+    "default_title": "半自動忍法概要埋め立て機",
     "default_popup": "popup/popup.html"
   },
   "host_permissions": [
@@ -51,10 +51,11 @@
         "Kinin_List.json",
         "Gotochi_list.json",
         "syageki_data.json",
-        "syudan_data.json"
+        "syudan_data.json",
+        "background_data.json"
       ],
       "matches": [
-        "<all_urls>"
+        "https://character-sheets.appspot.com/*"
       ]
     }
   ]
