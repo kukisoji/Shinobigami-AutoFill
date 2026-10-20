@@ -1,39 +1,37 @@
+// Firefoxは browser.*、Chrome系は chrome.* を使う（どちらもPromiseを返す）
+const ext = globalThis.browser ?? globalThis.chrome;
+
 document.addEventListener("DOMContentLoaded", function () {
   const searchBtn = document.getElementById("search-btn");
   const newActionBtn = document.getElementById("gaba-check");
-  let isScriptInjected = false;
+
+  async function injectContentScript(tabId) {
+    // content.js側で二重実行を防いでいるので、何度注入しても問題ない
+    await ext.scripting.executeScript({
+      target: { tabId: tabId },
+      files: ["content-scripts/content.js"],
+    });
+  }
 
   async function sendMessageToContentScript(action) {
-    const [tab] = await chrome.tabs.query({
+    const [tab] = await ext.tabs.query({
       active: true,
       currentWindow: true,
     });
+    if (!tab) return;
 
-    if (!isScriptInjected) {
-      try {
-        await chrome.scripting.executeScript({
-          target: { tabId: tab.id },
-          files: ["content-scripts/content.js"],
-        });
-        isScriptInjected = true;
-      } catch (error) {
-        console.error("スクリプトのインジェクトにエラー:", error);
-      }
+    try {
+      await injectContentScript(tab.id);
+    } catch (error) {
+      console.error("スクリプトのインジェクトにエラー:", error);
+      return;
     }
 
     try {
-      chrome.tabs.sendMessage(tab.id, { action: action });
+      await ext.tabs.sendMessage(tab.id, { action: action });
     } catch (error) {
-      console.error("メッセージの送信にエラー:", error);
-      // スクリプトがインジェクトされていない場合、再度インジェクトしてメッセージを送信
-      if (!isScriptInjected) {
-        await chrome.scripting.executeScript({
-          target: { tabId: tab.id },
-          files: ["content-scripts/content.js"],
-        });
-        isScriptInjected = true;
-        chrome.tabs.sendMessage(tab.id, { action: action });
-      }
+      // content.jsは返信しないため、Chromeでは「返信なし」のエラーになることがある
+      console.warn("メッセージ送信の結果:", error);
     }
   }
 
@@ -49,9 +47,4 @@ document.addEventListener("DOMContentLoaded", function () {
       await sendMessageToContentScript("GabaCheckStart");
     });
   }
-
-  // ページリロード時にフラグをリセット
-  window.addEventListener("beforeunload", () => {
-    isScriptInjected = false;
-  });
 });
