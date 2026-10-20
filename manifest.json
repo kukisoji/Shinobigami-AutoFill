@@ -51,7 +51,8 @@
         "Kinin_List.json",
         "Gotochi_list.json",
         "syageki_data.json",
-        "syudan_data.json"
+        "syudan_data.json",
+        "background_data.json"
       ],
       "matches": [
         "<all_urls>"

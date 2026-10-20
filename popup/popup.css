@@ -1,6 +1,5 @@
 body {
     width: 200px;
-    height: 75px;
     font-family: Arial, sans-serif;
     text-align: center;
     writing-mode: horizontal-tb;
@@ -64,4 +63,18 @@ html {
   margin-top: 6px;
   background: #35f500;
   border-bottom: 2px solid #5cb800;
+}
+
+h1 {
+  font-size: 1.6rem;
+  margin: 4px 0 6px;
+}
+
+/* 権利表示(TRPGライツ事務局の二次創作ガイドラインに基づく) */
+.rights {
+  margin: 6px 0 0;
+  font-size: 1rem;
+  line-height: 1.4;
+  color: #666;
+  text-align: left;
 }

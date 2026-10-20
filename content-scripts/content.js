@@ -111,14 +111,21 @@
     };
 
     // リストを一括取得
-    const [arrayData, Kinin_list, Gotochi_list, syageki_list, syudan_list] =
-      await loadFiles([
-        "array_data.json",
-        "Kinin_List.json",
-        "Gotochi_list.json",
-        "syageki_data.json",
-        "syudan_data.json",
-      ]);
+    const [
+      arrayData,
+      Kinin_list,
+      Gotochi_list,
+      syageki_list,
+      syudan_list,
+      backgroundData,
+    ] = await loadFiles([
+      "array_data.json",
+      "Kinin_List.json",
+      "Gotochi_list.json",
+      "syageki_data.json",
+      "syudan_data.json",
+      "background_data.json",
+    ]);
 
     let i = 0;
     let matchedEffect = "";
@@ -650,6 +657,93 @@
         updateUI();
       }
     } // ループ終了
+
+    //背景欄の自動入力
+    fillBackgrounds(backgroundData);
+  }
+
+  //背景欄の自動入力
+  //種別・功績点・参照ページはbackground_data.jsonから入れる。
+  //効果は著作権に配慮して同梱せず、忍法効果と同じく「ユーザーが入力した分を保存して次回から入力」にする
+  function fillBackgrounds(backgroundData) {
+    //background_data.jsonの列番号
+    const bg_col = {
+      name: 0,
+      type: 1,
+      point: 2,
+      page: 3,
+    };
+
+    const backgroundDataMap = new Map();
+    if (Array.isArray(backgroundData)) {
+      backgroundData.forEach((row) => backgroundDataMap.set(row[bg_col.name], row));
+    }
+
+    //名前から空白を除いて探し、見つからなければ括弧書き（「流派の血（鞍馬神流）」の鞍馬神流など）を外して探す
+    const findBackground = (name) => {
+      const trimmed = name.replace(/\s/g, "");
+      if (backgroundDataMap.has(trimmed)) return [trimmed, backgroundDataMap.get(trimmed)];
+      const base = trimmed.replace(/[（(【].*?[）)】]/g, "");
+      if (backgroundDataMap.has(base)) return [base, backgroundDataMap.get(base)];
+      return [trimmed, undefined];
+    };
+
+    //値を入れてchangeイベントを発火(ページ側の表示更新用)
+    const setValue = (element, value) => {
+      if (!element || value === undefined || value === null) return;
+      element.value = String(value);
+      element.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+
+    const backgroundNameElements = document.querySelectorAll(
+      '[id^="background."][id$=".name"]'
+    );
+
+    for (const nameElement of backgroundNameElements) {
+      const baseId = nameElement.id.replace(/\.name$/, "");
+      const typeElement = document.getElementById(baseId + ".type");
+      const pointElement = document.getElementById(baseId + ".point");
+      const effectElement = document.getElementById(baseId + ".effect");
+      const pageElement = document.getElementById(baseId + ".page");
+
+      const name = nameElement.value || "";
+      const effectValue = effectElement ? effectElement.value : "";
+      //「以下、未使用」以降は処理しない(忍法欄と同じ)
+      if (name.trim() === "以下、未使用" || effectValue.trim() === "以下、未使用") break;
+      if (name.trim() === "") continue;
+
+      const [lookupName, result] = findBackground(name);
+
+      //データにある背景だけ入力し、無い背景はユーザーの入力をそのまま残す
+      if (result) {
+        if (typeElement && [...typeElement.options].some((o) => o.value === result[bg_col.type])) {
+          setValue(typeElement, result[bg_col.type]);
+        }
+        setValue(pointElement, result[bg_col.point]);
+        setValue(pageElement, result[bg_col.page]);
+      } else {
+        console.warn(`背景が見つかりませんでした: ${lookupName}`);
+      }
+
+      //背景効果記入ゾーン(忍法名と同じ名前の背景と混ざらないよう、保存名の頭に「背景:」を付ける)
+      if (!effectElement) continue;
+      const storageKey = "背景:" + lookupName;
+      if (effectValue !== "") {
+        chrome.storage.local.set({ [storageKey]: effectValue }, function () {
+          console.log("値が保存されました：", storageKey, ":", effectValue);
+        });
+      } else {
+        chrome.storage.local.get(storageKey, function (saved) {
+          const savedValue = saved[storageKey];
+          if (savedValue) {
+            setValue(effectElement, savedValue);
+            console.log("保存された値を表示しました：", storageKey, ":", savedValue);
+          } else {
+            console.log("保存された値がありません：", storageKey);
+          }
+        });
+      }
+    }
   }
 
   //ガバチェック
