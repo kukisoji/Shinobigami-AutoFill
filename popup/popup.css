@@ -112,3 +112,53 @@ h1 {
 .transfer-status:empty {
   display: none;
 }
+
+
+/* Android版Firefoxではポップアップが1画面のページとして開くため、
+   幅を画面に合わせて文字とボタンを大きくする(popup.jsでhtmlにmobileクラスを付ける)。
+   パソコンのポップアップには影響しない */
+html.mobile body {
+  width: auto;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+html.mobile h1 {
+  font-size: 2.4rem;
+  margin: 0 0 20px;
+}
+
+html.mobile #search-btn,
+html.mobile #gaba-check {
+  display: block;
+  width: 100%;
+  margin: 0 0 14px;
+  padding: 14px 0;
+  font-size: 2rem;
+}
+
+html.mobile #search-btn:hover,
+html.mobile #gaba-check:hover {
+  margin-top: 0;
+}
+
+html.mobile .transfer {
+  margin-top: 20px;
+}
+
+html.mobile .transfer-btn {
+  width: 100%;
+  margin: 0 0 10px;
+  padding: 10px 0;
+  font-size: 1.5rem;
+}
+
+html.mobile .transfer-status {
+  font-size: 1.4rem;
+}
+
+html.mobile .rights {
+  margin-top: 20px;
+  font-size: 1.3rem;
+}

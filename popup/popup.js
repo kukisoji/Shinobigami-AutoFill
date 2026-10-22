@@ -1,6 +1,11 @@
 // Firefoxは browser.*、Chrome系は chrome.* を使う（どちらもPromiseを返す）
 const ext = globalThis.browser ?? globalThis.chrome;
 
+// Android版Firefoxではポップアップが1画面のページとして開くので、スマホ向けの大きい表示にする
+if (/Android/i.test(navigator.userAgent)) {
+  document.documentElement.classList.add("mobile");
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   const searchBtn = document.getElementById("search-btn");
   const newActionBtn = document.getElementById("gaba-check");
